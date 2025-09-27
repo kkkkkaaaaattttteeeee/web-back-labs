@@ -1,4 +1,4 @@
-from flask import Flask, url_for, request, redirect
+from flask import Flask, url_for, request, redirect, render_template
 app = Flask(__name__)
 from datetime import datetime
 
@@ -70,7 +70,7 @@ def start():
            </body>\
         </html>""", 200, {
             'X-Server': 'sample',
-            'Content-Type': 'text/plain; charset=utf-8'
+            'Content-Type': 'text/plain; charset=UTF-8'
         }
 
 @app.route("/lab1/author") 
@@ -255,3 +255,7 @@ def im_a_teapot():
 </body>
 </html>
 """, 418
+
+@app.errorhandler(404)
+def not_found(err):
+    return render_template('404.html'), 404
