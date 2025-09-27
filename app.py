@@ -27,6 +27,13 @@ Werkzeug, а также шаблонизатор Jinja2. Относится к �
             <li><a href="/lab1/image">Картинка</a></li>
             <li><a href="/lab1/counter">Счетчик</a></li>
             <li><a href="/lab1/info">Перенаправление</a></li>
+            <li><a href="/400">Ошибка 400</a></li>
+            <li><a href="/401">Ошибка 401</a></li>
+            <li><a href="/402">Ошибка 402</a></li>
+            <li><a href="/403">Ошибка 403</a></li>
+            <li><a href="/405">Ошибка 405</a></li>
+            <li><a href="/418">Ошибка 418</a></li>
+
         </ul>
     </nav>
     <a href="/index">Вернуться назад</a>
@@ -107,6 +114,11 @@ def image():
                <img src=""" + path + """>
            </body>
         </html>"""
+    return html_content, 200, {
+        'Content-Language': 'ru',
+        'X-Trees':'oak',
+        'X-Server-Technology': 'Flask Python Framework',
+        'Content-Type':'text/html; charset=utf-8'    }
 
 count=0
 
