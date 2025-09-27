@@ -2,15 +2,65 @@ from flask import Flask, url_for, request, redirect
 app = Flask(__name__)
 from datetime import datetime
 
+@app.route("/lab1")
+def ones():
+    return""" <!doctype html>
+    <html> 
+        <head>
+        <title>НГТУ, ФБ, Лабораторные работы</title>
+        </head>
+    <body>
+        <header>
+            <h1>НГТУ, ФБ, WEB-программирование, часть 2. Лабораторная работа 1</h1>
+        </header>
+    <nav>
+        <ul>
+            <li><a href="/lab1/web">Web-сервер на flask</a></li>
+            <li><a href="/lab1/author">Автор</a></li>
+            <li><a href="/lab1/image">Картинка</a></li>
+            <li><a href="/lab1/counter">Счетчик</a></li>
+            <li><a href="/lab1/info">Перенаправление</a></li>
+        </ul>
+    </nav>
+    <footer>
+        Обедина Екатерина Сергеевна, Группа ФБИ-33, Курс
+    </footer>
+</body>
+</html>"""
+
 @app.route("/")
+@app.route("/index")
+def index():
+    return""" <!doctype html>
+    <html> 
+        <head>
+        <title>НГТУ, ФБ, Лабораторные работы</title>
+        </head>
+    <body>
+        <header>
+            <h1>НГТУ, ФБ, WEB-программирование, часть 2. Список лабораторных</h1>
+        </header>
+    <nav>
+        <ul>
+            <li><a href="/lab1">Лабораторная работа 1</a></li>
+        </ul>
+    </nav>
+    <footer>
+        Обедина Екатерина Сергеевна, Группа ФБИ-33, Курс
+    </footer>
+</body>
+</html>"""
+
+
 @app.route("/lab1/web")
 def start():
-    return """<!doctype html>\
+    return """
+    <!doctype html>\
         <html>\
            <body>\
                 <h1>web-сервер на flask</h1>\
            </body>\
-        </html>""",200, {
+        </html>""", 200, {
             'X-Server': 'sample',
             'Content-Type': 'text/plain; charset=utf-8'
         }
@@ -97,3 +147,7 @@ def created():
 @app.errorhandler(404)
 def not_found(err):
     return "Такой страницы нет!"
+
+@app.errorhandler(500)
+def internal_error(err):
+    return "Внутреняя ошибка сервера",500
