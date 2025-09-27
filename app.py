@@ -159,3 +159,99 @@ def not_found(err):
 @app.errorhandler(500)
 def internal_error(err):
     return "Внутреняя ошибка сервера",500
+
+@app.route('/400')
+def bad_request():
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>400 Bad Request</title>
+</head>
+<body>
+<h1>400 Bad Request</h1>
+<p>Запрос некорректен или неправильно сформирован.</p>
+</body>
+</html>
+""", 400
+
+app.route('/401')
+def unauthorized():
+    return""" <!doctype html>
+    <html>
+    <head>
+    <title>401 Unauthorized</tite>
+    </head>
+    <body>
+    <h1>401 Unauthorized</h1>
+    <p>Требуется аунтефикация для доступа к ресурсу.</p>
+    </body>
+    </html>""", 401
+
+@app.route('/402')
+def payment_required():
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>402 Payment Required</title>
+</head>
+<body>
+<h1>402 Payment Required</h1>
+<p>Для продолжения операции необходима оплата.</p>
+</body>
+</html>
+""", 402
+
+
+@app.route('/403')
+def forbidden():
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>403 Forbidden</title>
+</head>
+<body>
+<h1>403 Forbidden</h1>
+<p>Доступ запрещён. У вас недостаточно прав для просмотра ресурса.</p>
+</body>
+</html>
+""", 403
+
+
+@app.route('/405')
+def method_not_allowed():
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>405 Method Not Allowed</title>
+</head>
+<body>
+<h1>405 Method Not Allowed</h1>
+<p>Используемый метод HTTP-запроса не поддерживается данным ресурсом.</p>
+</body>
+</html>
+""", 405
+
+
+@app.route('/418')
+def im_a_teapot():
+    return """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>418 I'm a Teapot</title>
+</head>
+<body>
+<h1>418 I'm a Teapot</h1>
+<p>Этот сервер является чайником и не способен заваривать кофе.</p>
+</body>
+</html>
+""", 418
