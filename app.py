@@ -1,10 +1,11 @@
 from flask import Flask, url_for, request, redirect, render_template
+import datetime
+
 app = Flask(__name__)
-from datetime import datetime
 
 @app.route("/lab1")
 def ones():
-    return""" <!doctype html>
+    return """ <!doctype html>
     <html> 
         <head>
         <title>НГТУ, ФБ, Лабораторная работа 1</title>
@@ -33,10 +34,9 @@ Werkzeug, а также шаблонизатор Jinja2. Относится к �
             <li><a href="/403">Ошибка 403</a></li>
             <li><a href="/405">Ошибка 405</a></li>
             <li><a href="/418">Ошибка 418</a></li>
-
         </ul>
     </nav>
-    <a href="/index">Вернуться назад</a>
+    <a href="/index">Верниться назад</a>
     <footer>
         Обедина Екатерина Сергеевна, Группа ФБИ-33, Курс
     </footer>
@@ -46,7 +46,7 @@ Werkzeug, а также шаблонизатор Jinja2. Относится к �
 @app.route("/")
 @app.route("/index")
 def index():
-    return""" <!doctype html>
+    return """ <!doctype html>
     <html> 
         <head>
         <title>НГТУ, ФБ, Лабораторные работы</title>
@@ -66,7 +66,6 @@ def index():
 </body>
 </html>"""
 
-
 @app.route("/lab1/web")
 def start():
     return """
@@ -82,12 +81,10 @@ def start():
 
 @app.route("/lab1/author") 
 def author(): 
- 
     name = "Обедина Екатерина Сергеевна" 
     group = "ФБИ-33" 
     faculty = "ФБ" 
- 
-    return"""<!doctype html> 
+    return """<!doctype html> 
         <html> 
            <body> 
                <p>Студент: """ + name + """</p> 
@@ -99,33 +96,31 @@ def author():
 
 @app.route("/lab1/image")
 def image():
-
-    path = url_for("static", filename= "oak.jpg")
+    path = url_for("static", filename="oak.jpg")
     css_path = url_for("static", filename="lab1.css")
-
-    return"""<!doctype html>
+    return """<!doctype html>
         <html>
         <head>
           <title>Самое доброе дерево?</title>
-          <link rel="stylesheet" href= """+ css_path +""">
+          <link rel="stylesheet" href=""" + css_path + """>
       </head>
            <body>
                <h1>Дуб</h1>
                <img src=""" + path + """>
            </body>
-        </html>"""
-    return html_content, 200, {
+        </html>""", 200, {
         'Content-Language': 'ru',
         'X-Trees':'oak',
         'X-Server-Technology': 'Flask Python Framework',
-        'Content-Type':'text/html; charset=utf-8'    }
+        'Content-Type':'text/html; charset=utf-8'
+    }
 
-count=0
+count = 0
 
 @app.route("/lab1/counter")
 def counter():
     global count
-    time = datetime.today()
+    time = datetime.datetime.now()
     url = request.url
     client_ip = request.remote_addr
     count += 1
@@ -138,14 +133,14 @@ def counter():
             Дата и время: """ + str(time) + """
             <br> Запрошенный адрес: """ + url + """
             <br> Ваш IP адрес: """ + client_ip + """
-            <a href = """ + url_for('reset_counter') +""">Сбросить счетчик</a>
+            <a href = """ + url_for('reset_counter') + """>Сбросить счетчик</a>
         </body>
     </html>"""
 
 @app.route('/reset_counter')
 def reset_counter():
     global count
-    count=0
+    count = 0
     return redirect(url_for('counter'))
 
 @app.route("/lab1/info")
@@ -154,7 +149,7 @@ def info():
 
 @app.route("/create")
 def created():
-    return'''
+    return '''
 <!doctype html>
     <html>
         <body>
@@ -163,10 +158,6 @@ def created():
         </body>
     </html>
 ''', 201
-
-@app.errorhandler(404)
-def not_found(err):
-    return "Такой страницы нет!"
 
 @app.errorhandler(500)
 def internal_error(err):
@@ -188,12 +179,12 @@ def bad_request():
 </html>
 """, 400
 
-app.route('/401')
+@app.route('/401')
 def unauthorized():
-    return""" <!doctype html>
+    return """ <!doctype html>
     <html>
     <head>
-    <title>401 Unauthorized</tite>
+    <title>401 Unauthorized</title>
     </head>
     <body>
     <h1>401 Unauthorized</h1>
@@ -217,7 +208,6 @@ def payment_required():
 </html>
 """, 402
 
-
 @app.route('/403')
 def forbidden():
     return """
@@ -234,7 +224,6 @@ def forbidden():
 </html>
 """, 403
 
-
 @app.route('/405')
 def method_not_allowed():
     return """
@@ -250,7 +239,6 @@ def method_not_allowed():
 </body>
 </html>
 """, 405
-
 
 @app.route('/418')
 def im_a_teapot():
@@ -270,4 +258,37 @@ def im_a_teapot():
 
 @app.errorhandler(404)
 def not_found(err):
-    return render_template('404.html'), 404
+    try:
+        # Получаем данные пользователя
+        user_ip = request.remote_addr
+        access_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        accessed_page = request.url
+        
+        # Логируем доступ
+        log_entry = f'{access_time}: {user_ip} попытался зайти на "{accessed_page}".'
+        
+        with open('access_log.txt', 'a', encoding='utf-8') as log_file:
+            log_file.write(f'{log_entry}\n')
+        
+        # Читаем полный лог для отображения
+        log_entries = []
+        try:
+            with open('access_log.txt', 'r', encoding='utf-8') as log_file:
+                log_entries = log_file.read().strip().split('\n')
+        except FileNotFoundError:
+            pass
+        
+        # Передаем данные в шаблон
+        context = {
+            'ip_address': user_ip,
+            'access_time': access_time,
+            'home_link': '/',
+            'log_entries': log_entries
+        }
+        
+        return render_template('404.html', **context), 404
+    
+    except Exception as e:
+        # Fallback если что-то пошло не так
+        app.logger.error(f'Error in 404 handler: {e}')
+        return render_template('404.html'), 404

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Упс! Страница не найдена</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-align: center;
+        }
+        
+        .error-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            margin: 20px;
+        }
+        
+        .error-code {
+            font-size: 120px;
+            font-weight: bold;
+            margin: 0;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+        
+        .error-message {
+            font-size: 24px;
+            margin: 20px 0;
+        }
+        
+        .info-section {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: left;
+        }
+        
+        .log-section {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+        }
+        
+        .home-button {
+            display: inline-block;
+            padding: 12px 30px;
+            background: white;
+            color: #667eea;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: bold;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .home-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <h1 class="error-code">404</h1>
+        <p class="error-message">🚀 Упс! Похоже, этот сайт удел путешествовать!</p>
+        <p>Запрошенная страница отправилась в космическое путешествие и не вернулась.</p>
+        
+        <div class="info-section">
+            <h3>📊 Информация о доступе:</h3>
+            <p><strong>IP адрес:</strong> {{ ip_address }}</p>
+            <p><strong>Время доступа:</strong> {{ access_time }}</p>
+            <p><strong>Запрошенный URL:</strong> {{ request.url }}</p>
+        </div>
+        
+        <div class="log-section">
+            <h3>📝 История обращений:</h3>
+            {% if log_entries %}
+                {% for entry in log_entries %}
+                    <div>{{ entry }}</div>
+                {% endfor %}
+            {% else %}
+                <div>Лог пока пуст</div>
+            {% endif %}
+        </div>
+        
+        <a href="{{ home_link }}" class="home-button">🏠 Вернуться на главную</a>
+    </div>
+</body>
+</html>
