@@ -158,7 +158,7 @@ def not_found(err):
 
 @app.errorhandler(500)
 def internal_error(err):
-    return "Внутреняя ошибка сервера",500
+    return render_template('500.html'), 500
 
 @app.route('/400')
 def bad_request():
