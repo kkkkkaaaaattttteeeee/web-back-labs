@@ -3,7 +3,7 @@ app = Flask(__name__)
 from datetime import datetime
 
 @app.route("/")
-@app.route("/web")
+@app.route("/lab1/web")
 def start():
     return """<!doctype html>\
         <html>\
@@ -15,7 +15,7 @@ def start():
             'Content-Type': 'text/plain; charset=utf-8'
         }
 
-@app.route("/author") 
+@app.route("/lab1/author") 
 def author(): 
  
     name = "Обедина Екатерина Сергеевна" 
@@ -32,7 +32,7 @@ def author():
            </body> 
         </html>""" 
 
-@app.route("/image")
+@app.route("/lab1/image")
 def image():
 
     path = url_for("static", filename= "oak.jpg")
@@ -52,7 +52,7 @@ def image():
 
 count=0
 
-@app.route("/counter")
+@app.route("/lab1/counter")
 def counter():
     global count
     time = datetime.today()
@@ -78,9 +78,9 @@ def reset_counter():
     count=0
     return redirect(url_for('counter'))
 
-@app.route("/info")
+@app.route("/lab1/info")
 def info():
-    return redirect("/author")
+    return redirect("/lab1/author")
 
 @app.route("/create")
 def created():
