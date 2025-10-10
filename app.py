@@ -292,3 +292,11 @@ def not_found(err):
         # Fallback если что-то пошло не так
         app.logger.error(f'Error in 404 handler: {e}')
         return render_template('404.html'), 404
+    
+@app.route('/lab2/a')
+def a():
+    return 'без слеша'
+
+@app.route('/lab2/a/')
+def a2():
+    return 'со слешом'
