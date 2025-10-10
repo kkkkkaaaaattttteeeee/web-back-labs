@@ -450,3 +450,30 @@ books = [
 @app.route('/lab2/books')
 def show_books():
     return render_template('books.html', books=books)
+
+berries = [
+    {"name": "Клубника", "image": "strawberry.jpg", "description": "Сладкая красная ягода, богатая витамином C"},
+    {"name": "Малина", "image": "raspberry.jpg", "description": "Ароматная ягода, часто используется в десертах"},
+    {"name": "Черника", "image": "blueberry.jpg", "description": "Маленькая синяя ягода, полезна для зрения"},
+    {"name": "Ежевика", "image": "blackberry.jpg", "description": "Тёмная ягода с кисло-сладким вкусом"},
+    {"name": "Смородина", "image": "currant.jpg", "description": "Бывает чёрная, красная и белая, богата витаминами"},
+    {"name": "Крыжовник", "image": "gooseberry.jpg", "description": "Зелёная ягода с характерным кисловатым вкусом"},
+    {"name": "Земляника", "image": "wild_strawberry.jpg", "description": "Лесная ягода с насыщенным ароматом"},
+    {"name": "Брусника", "image": "lingonberry.jpg", "description": "Красная ягода с горьковатым привкусом"},
+    {"name": "Клюква", "image": "cranberry.jpg", "description": "Кислая ягода, растущая на болотах"},
+    {"name": "Облепиха", "image": "sea_buckthorn.jpg", "description": "Оранжевая ягода с высоким содержанием масел"},
+    {"name": "Голубика", "image": "bilberry.jpg", "description": "Лесная ягода, похожая на чернику"},
+    {"name": "Шиповник", "image": "rose_hip.jpg", "description": "Плоды розы, богатые витамином C"},
+    {"name": "Боярышник", "image": "hawthorn.jpg", "description": "Красные ягоды, полезные для сердца"},
+    {"name": "Ирга", "image": "serviceberry.jpg", "description": "Сладкие синие ягоды, растущие на кустах"},
+    {"name": "Калина", "image": "viburnum.jpg", "description": "Красные горькие ягоды, используются в народной медицине"},
+    {"name": "Рябина", "image": "rowan.jpg", "description": "Оранжево-красные ягоды, становятся сладкими после заморозков"},
+    {"name": "Черёмуха", "image": "bird_cherry.jpg", "description": "Чёрные ароматные ягоды с вяжущим вкусом"},
+    {"name": "Арония", "image": "chokeberry.jpg", "description": "Чёрноплодная рябина, богатая антиоксидантами"},
+    {"name": "Жимолость", "image": "honeysuckle.jpg", "description": "Синие продолговатые ягоды с уникальным вкусом"},
+    {"name": "Виноград", "image": "grape.jpg", "description": "Сочные ягоды, используемые для еды и производства вина"}
+]
+
+@app.route('/lab2/berries')
+def show_berries():
+    return render_template('berries.html', berries=berries)

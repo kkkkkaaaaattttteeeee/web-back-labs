@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Виды ягод</title>
+    <style>
+        .berry-card {
+            border: 1px solid #ddd;
+            margin: 10px;
+            padding: 15px;
+            display: inline-block;
+            width: 200px;
+            text-align: center;
+        }
+        .berry-image {
+            max-width: 150px;
+            max-height: 150px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Каталог ягод</h1>
+    
+    {% for berry in berries %}
+    <div class="berry-card">
+        <img src="{{ url_for('static', filename='images/' + berry.image) }}" 
+             alt="{{ berry.name }}" 
+             class="berry-image">
+        <h3>{{ berry.name }}</h3>
+        <p>{{ berry.description }}</p>
+    </div>
+    {% endfor %}
+</body>
+</html>
