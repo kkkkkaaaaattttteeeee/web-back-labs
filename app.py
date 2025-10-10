@@ -338,3 +338,7 @@ def example():
         {'name': 'манго', 'price': 321}
     ]
     return render_template('example.html', name=name, nomer=nomer, nomer_cursa=nomer_cursa, fruits=fruits)
+
+@app.route('/lab2/')
+def lab2():
+    return render_template('lab2.html')
