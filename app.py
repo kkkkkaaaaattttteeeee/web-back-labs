@@ -416,3 +416,20 @@ def clear_flowers():
         </body>
     </html>
     '''
+@app.route('/lab2/calc/<int:a>/<int:b>')
+def calculator(a, b):
+    result = f"""a = {a}, b = {b}
+{a} + {b} = {a + b}
+{a} - {b} = {a - b}
+{a} * {b} = {a * b}
+{a} / {b} = {a / b}
+{a} ** {b} = {a ** b}"""
+    return result.replace('\n', '<br>')
+
+@app.route('/lab2/calc/')
+def calc_default():
+    return redirect('/lab2/calc/1/1')
+
+@app.route('/lab2/calc/<int:a>')
+def calc_single_number(a):
+    return redirect(f'/lab2/calc/{a}/1')
