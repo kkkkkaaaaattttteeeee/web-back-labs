@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Цветок {{ flower_id }}</title>
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+    <nav>
+        <a href="/">Главное меню</a> | 
+        <a href="/lab2/">Лаб. работа 2</a> |
+        <a href="/lab2/all_flowers">Все цветы</a>
+    </nav>
+
+    <h1>Информация о цветке</h1>
+    <p><strong>ID:</strong> {{ flower_id }}</p>
+    <p><strong>Цветок:</strong> {{ flower.name }}</p>
+    <p><strong>Цена:</strong> {{ flower.price }} руб.</p>
+    
+    <br>
+    <a href="/lab2/all_flowers">← Назад к списку цветов</a>
+</body>
+</html>

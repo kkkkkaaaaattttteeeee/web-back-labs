@@ -302,36 +302,58 @@ def a():
 def a2():
     return 'со слешом'
 
-flower_list = ['роза','тюльпан', 'незаудка', 'ромашка']
+flower_list = [
+    {'name': 'роза', 'price': 150},
+    {'name': 'тюльпан', 'price': 80},
+    {'name': 'незабудка', 'price': 50},
+    {'name': 'ромашка', 'price': 40},
+]
+
 
 @app.route('/lab2/flowers/<int:flower_id>')
-def flowers(flower_id):
+def flower_detail(flower_id):
     if flower_id >= len(flower_list):
-        abort(404)
-    else:
-        flower_name = flower_list[flower_id]
-        html = f'''
-        <!doctype html>
-        <html>
-            <head>
-                <title>Цветок #{flower_id}</title>
-            </head>
-            <body>
-                <h1>Информация о цветке</h1>
-                <p><strong>ID цветка:</strong> {flower_id}</p>
-                <p><strong>Название:</strong> {flower_name}</p>
-                <p><strong>Всего цветков в базе:</strong> {len(flower_list)}</p>
-                <br>
-                <a href="/lab2/all_flowers">Посмотреть все цветы</a><br>
-                <a href="/lab2">На главную</a>
-            </body>
-        </html>
-        '''
-        return html 
+        return f"Цветок с ID {flower_id} не найден", 404
+    
+    flower = flower_list[flower_id]
+    
+    html = f'''
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Цветок #{flower_id}</title>
+        <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    </head>
+    <body>
+        <h1>🌸 Цветок {flower_id}</h1>
+        
+        <p><strong>Название:</strong> {flower['name']}</p>
+        <p><strong>Цена:</strong> {flower['price']} руб.</p>
+        
+        <br>
+        <a href="/lab2/all_flowers">← Назад к списку цветов</a><br>
+        <a href="/lab2/">← Назад к лабораторной работе</a><br>
+        <a href="/">← На главную</a>
+        
+        <br><br>
+        <small>Всего цветов: {len(flower_list)}</small>
+    </body>
+    </html>
+    '''
+    return html
     
 @app.route('/lab2/add_flower/<name>')
 def add_flower(name):
     flower_list.append(name)
+    full_names = []
+    for item in flower_list:
+        if isinstance(item, dict):
+            full_names.append(item['name'])
+        else:
+            full_names.append(item)
+            
+    formatted_names = ', '.join(full_names)
+
     return f'''
 <!doctype html>
 <html>
@@ -339,7 +361,7 @@ def add_flower(name):
     <h1>Добавлен новый цветок</h1>
     <p>Название нового цветка: {name} </p>
     <p> Всего цветков: {len(flower_list)} </p>
-    <p>Полный список: {flower_list} </p>
+    <p>Полный список: {formatted_names} </p>
     </body>
 </html>
 '''
@@ -372,13 +394,13 @@ def lab2():
         <h2>Выполненные задания</h1>
     <nav>
         <ul>
-            <li><a href="/lab2/all_flowers">Работа с цветами, добавление и очистка</a></li>
+            <li><a href="/lab2/flowers/2">Работа с цветами, добавление и очистка</a></li>
             <li><a href="/lab2/example">Использование шаблонов, подключение стилей, условия и циклы </a></li>
             <li><a href="/lab2/filters">Фильтры</a></li>
             <li><a href="/lab2/calc">Подсчет</a></li>
             <li><a href="/lab2/books">Книги</a></li>
             <li><a href="/lab2/berries">Ягоды </a></li>
-            <li><a href="/lab2/flowers">Дополнительное задание</a></li>
+            <li><a href="/lab2/all_flowers">Дополнительное задание</a></li>
         </ul>
     </nav>
     <a href="/index">Верниться назад</a>
@@ -393,56 +415,29 @@ def filters() :
     phrase = "0 <b>сколько</b> <u>нам</u≥ <i>открытий</i> чудных..."
     return render_template('filter.html', phrase = phrase)
 
-@app.route('/lab2/add_flower/')
-def add_flower_empty():
-    abort(400, "вы не задали имя цветка")
+
+@app.route('/lab2/add_flower', methods=['POST'])
+def add_flower_form():
+    name = request.form.get('name')
+    price = request.form.get('price', 0)
+    if name:
+        flower_list.append({'name': name, 'price': int(price)})
+    return redirect(url_for('all_flowers'))
+
+@app.route('/lab2/add_flower/<name>')
+def add_flower_old(name):
+    flower_list.append({'name': name, 'price': 0})
+    return redirect(url_for('all_flowers'))
 
 @app.route('/lab2/all_flowers')
 def all_flowers():
-    html = '''
-    <!doctype html>
-    <html>
-        <head>
-            <title>Все цветы</title>
-        </head>
-        <body>
-            <h1>Список всех цветов</h1>
-            <p><strong>Всего цветков:</strong> {count}</p>
-            <h2>Список:</h2>
-            <ul>
-    '''.format(count=len(flower_list))
-    
-    for i, flower in enumerate(flower_list):
-        html += f'<li>{i}: {flower}</li>\n'
-    
-    html += '''
-            </ul>
-            <br>
-            <a href="/lab2/clear_flowers">Очистить список цветов</a><br>
-            <a href="/lab2">На главную</a>
-        </body>
-    </html>
-    '''
-    return html
+    return render_template('all_flowers.html', flowers=flower_list)
 
 @app.route('/lab2/clear_flowers')
 def clear_flowers():
     flower_list.clear()
-    return '''
-    <!doctype html>
-    <html>
-        <head>
-            <title>Список очищен</title>
-        </head>
-        <body>
-            <h1>Список цветов очищен</h1>
-            <p>Все цветы были удалены из списка.</p>
-            <br>
-            <a href="/lab2/all_flowers">Посмотреть все цветы</a><br>
-            <a href="/lab2">На главную</a>
-        </body>
-    </html>
-    '''
+    return redirect(url_for('all_flowers'))
+
 @app.route('/lab2/calc/<int:a>/<int:b>')
 def calculator(a, b):
     result = f"""a = {a}, b = {b}
@@ -504,3 +499,10 @@ berries = [
 @app.route('/lab2/berries')
 def show_berries():
     return render_template('berries.html', berries=berries)
+
+@app.route('/lab2/delete_flower/<int:flower_id>')
+def delete_flower(flower_id):
+    if flower_id >= len(flower_list):
+        abort(404)
+    flower_list.pop(flower_id)
+    return redirect(url_for('all_flowers'))
