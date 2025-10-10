@@ -58,6 +58,7 @@ def index():
     <nav>
         <ul>
             <li><a href="/lab1">Лабораторная работа 1</a></li>
+            <li><a href="/lab2">Лабораторная работа 2</a></li>
         </ul>
     </nav>
     <footer>
@@ -359,7 +360,33 @@ def example():
 
 @app.route('/lab2/')
 def lab2():
-    return render_template('lab2.html')
+    return """ <!doctype html>
+    <html> 
+        <head>
+        <title>НГТУ, ФБ, Лабораторная работа 2</title>
+        </head>
+    <body>
+        <header>
+            <h1>Лабораторная работа 2</h1>
+        </header>
+        <h2>Выполненные задания</h1>
+    <nav>
+        <ul>
+            <li><a href="/lab2/all_flowers">Работа с цветами, добавление и очистка</a></li>
+            <li><a href="/lab2/example">Использование шаблонов, подключение стилей, условия и циклы </a></li>
+            <li><a href="/lab2/filters">Фильтры</a></li>
+            <li><a href="/lab2/calc">Подсчет</a></li>
+            <li><a href="/lab2/books">Книги</a></li>
+            <li><a href="/lab2/berries">Ягоды </a></li>
+            <li><a href="/lab2/flowers">Дополнительное задание</a></li>
+        </ul>
+    </nav>
+    <a href="/index">Верниться назад</a>
+    <footer>
+        Обедина Екатерина Сергеевна, Группа ФБИ-33, Курс
+    </footer>
+</body>
+</html>"""
 
 @app. route('/lab2/filters')
 def filters() :
