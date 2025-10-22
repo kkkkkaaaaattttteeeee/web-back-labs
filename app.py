@@ -1,47 +1,9 @@
 from flask import Flask, url_for, request, redirect, render_template, abort, render_template_string
 import datetime
+from lab1 import lab1
 
 app = Flask(__name__)
-
-@app.route("/lab1")
-def ones():
-    return """ <!doctype html>
-    <html> 
-        <head>
-        <title>НГТУ, ФБ, Лабораторная работа 1</title>
-        </head>
-    <body>
-        <header>
-            <h1>Лабораторная работа 1</h1>
-        </header>
-        <div>Flask — фреймворк для создания веб-приложений на языке
-программирования Python, использующий набор инструментов
-Werkzeug, а также шаблонизатор Jinja2. Относится к категории так
-называемых микрофреймворков — минималистичных каркасов
-веб-приложений, сознательно предоставляющих лишь самые ба-
-зовые возможности.</div>
-        <h2>Выполненные задания</h1>
-    <nav>
-        <ul>
-            <li><a href="/lab1/web">Web-сервер на flask</a></li>
-            <li><a href="/lab1/author">Автор</a></li>
-            <li><a href="/lab1/image">Картинка</a></li>
-            <li><a href="/lab1/counter">Счетчик</a></li>
-            <li><a href="/lab1/info">Перенаправление</a></li>
-            <li><a href="/400">Ошибка 400</a></li>
-            <li><a href="/401">Ошибка 401</a></li>
-            <li><a href="/402">Ошибка 402</a></li>
-            <li><a href="/403">Ошибка 403</a></li>
-            <li><a href="/405">Ошибка 405</a></li>
-            <li><a href="/418">Ошибка 418</a></li>
-        </ul>
-    </nav>
-    <a href="/index">Верниться назад</a>
-    <footer>
-        Обедина Екатерина Сергеевна, Группа ФБИ-33, Курс
-    </footer>
-</body>
-</html>"""
+app.register_blueprint(lab1)
 
 @app.route("/")
 @app.route("/index")
@@ -67,76 +29,6 @@ def index():
 </body>
 </html>"""
 
-@app.route("/lab1/web")
-def start():
-    return """
-    <!doctype html>\
-        <html>\
-           <body>\
-                <h1>web-сервер на flask</h1>\
-           </body>\
-        </html>""", 200, {
-            'X-Server': 'sample',
-            'Content-Type': 'text/plain; charset=UTF-8'
-        }
-
-@app.route("/lab1/author") 
-def author(): 
-    name = "Обедина Екатерина Сергеевна" 
-    group = "ФБИ-33" 
-    faculty = "ФБ" 
-    return """<!doctype html> 
-        <html> 
-           <body> 
-               <p>Студент: """ + name + """</p> 
-               <p>Группа: """ + group + """</p> 
-               <p>Факультет: """ + faculty + """</p> 
-               <a href="/web">web</a> 
-           </body> 
-        </html>""" 
-
-@app.route("/lab1/image")
-def image():
-    path = url_for("static", filename="oak.jpg")
-    css_path = url_for("static", filename="lab1.css")
-    return """<!doctype html>
-        <html>
-        <head>
-          <title>Самое доброе дерево?</title>
-          <link rel="stylesheet" href=""" + css_path + """>
-      </head>
-           <body>
-               <h1>Дуб</h1>
-               <img src=""" + path + """>
-           </body>
-        </html>""", 200, {
-        'Content-Language': 'ru',
-        'X-Trees':'oak',
-        'X-Server-Technology': 'Flask Python Framework',
-        'Content-Type':'text/html; charset=utf-8'
-    }
-
-count = 0
-
-@app.route("/lab1/counter")
-def counter():
-    global count
-    time = datetime.datetime.now()
-    url = request.url
-    client_ip = request.remote_addr
-    count += 1
-    return """
-<!doctype html>
-    <html>
-        <body>
-            Сколько раз вы сюда заходили: """ + str(count) + """
-            <hr>
-            Дата и время: """ + str(time) + """
-            <br> Запрошенный адрес: """ + url + """
-            <br> Ваш IP адрес: """ + client_ip + """
-            <a href = """ + url_for('reset_counter') + """>Сбросить счетчик</a>
-        </body>
-    </html>"""
 
 @app.route('/reset_counter')
 def reset_counter():
@@ -144,9 +36,6 @@ def reset_counter():
     count = 0
     return redirect(url_for('counter'))
 
-@app.route("/lab1/info")
-def info():
-    return redirect("/lab1/author")
 
 @app.route("/create")
 def created():
