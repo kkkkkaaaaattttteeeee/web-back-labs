@@ -241,4 +241,3 @@ def im_a_teapot():
 </body>
 </html>
 """, 418
-

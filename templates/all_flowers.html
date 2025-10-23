@@ -13,7 +13,7 @@
     <h1>Список цветов</h1>
     
     <h2>Добавить новый цветок</h2>
-    <form action="{{ url_for('add_flower_form') }}" method="POST">
+    <form action="{{ url_for('lab2.add_flower_form') }}" method="POST">
         <input type="text" name="name" placeholder="Название цветка" required>
         <input type="number" name="price" placeholder="Цена" value="0" required>
         <button type="submit">Добавить</button>
@@ -31,7 +31,7 @@
         {% for flower in flowers %}
         <tr>
             <td>{{ loop.index0 }}</td>
-            <td><a href="/lab2/flowers/{{ loop.index0 }}">{{ flower.name }}</a></td>
+            <td><a href="/lab2/flowers/{{ loop.index }}">{{ flower.name }}</a></td>
             <td>{{ flower.price }} руб.</td>
             <td>
                 <a href="/lab2/delete_flower/{{ loop.index0 }}" 
