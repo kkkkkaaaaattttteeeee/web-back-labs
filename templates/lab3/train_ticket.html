@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 3{% endblock %}
+
+{% block main %}
+<h1>Железнодорожный билет</h1>
+
+<div style="border: 2px solid #333; padding: 20px; max-width: 500px; background: white;">
+    <h2 style="text-align: center; color: #d40000;">ЖЕЛЕЗНАЯ ДОРОГА</h2>
+    
+    <div style="margin-bottom: 15px;">
+        <strong>Пассажир:</strong> {{ fio }}
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <strong>Тип билета:</strong> {{ ticket_type }}
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <strong>Маршрут:</strong> {{ departure }} → {{ destination }}
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <strong>Дата:</strong> {{ date }}
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <strong>Полка:</strong> 
+        {% if shelf == 'lower' %}Нижняя
+        {% elif shelf == 'upper' %}Верхняя
+        {% elif shelf == 'upper-side' %}Верхняя боковая
+        {% elif shelf == 'lower-side' %}Нижняя боковая
+        {% endif %}
+    </div>
+    
+    <div style="margin-bottom: 15px;">
+        <strong>Дополнительно:</strong>
+        {% if linen == 'on' %}Бельё{% endif %}
+        {% if baggage == 'on' %}, Багаж{% endif %}
+        {% if insurance == 'on' %}, Страховка{% endif %}
+    </div>
+    
+    <div style="border-top: 1px dashed #333; padding-top: 15px; text-align: right;">
+        <strong>Итого к оплате: {{ total_price }} руб.</strong>
+    </div>
+</div>
+
+<div style="margin-top: 20px;">
+    <a href="/lab3/train">Оформить новый билет</a>
+</div>
+{% endblock %}

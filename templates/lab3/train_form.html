@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 3{% endblock %}
+
+{% block main %}
+<h1>Железнодорожный билет</h1>
+
+<form action="/lab3/train_ticket">
+    <div>
+        <label>ФИО пассажира:</label>
+        <input type="text" name="fio" value="{{ fio or '' }}">
+        {% if errors and errors.fio %}
+            <span style="color: red">{{ errors.fio }}</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <label>Полка:</label>
+        <select name="shelf">
+            <option value="">Выберите полку</option>
+            <option value="lower" {{ 'selected' if shelf == 'lower' else '' }}>Нижняя</option>
+            <option value="upper" {{ 'selected' if shelf == 'upper' else '' }}>Верхняя</option>
+            <option value="upper-side" {{ 'selected' if shelf == 'upper-side' else '' }}>Верхняя боковая</option>
+            <option value="lower-side" {{ 'selected' if shelf == 'lower-side' else '' }}>Нижняя боковая</option>
+        </select>
+        {% if errors and errors.shelf %}
+            <span style="color: red">{{ errors.shelf }}</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <label>
+            <input type="checkbox" name="linen" {{ 'checked' if linen == 'on' else '' }}>
+            С бельём
+        </label>
+    </div>
+
+    <div>
+        <label>
+            <input type="checkbox" name="baggage" {{ 'checked' if baggage == 'on' else '' }}>
+            С багажом
+        </label>
+    </div>
+
+    <div>
+        <label>Возраст:</label>
+        <input type="number" name="age" min="1" max="120" value="{{ age or '' }}">
+        {% if errors and errors.age %}
+            <span style="color: red">{{ errors.age }}</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <label>Пункт выезда:</label>
+        <input type="text" name="departure" value="{{ departure or '' }}">
+        {% if errors and errors.departure %}
+            <span style="color: red">{{ errors.departure }}</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <label>Пункт назначения:</label>
+        <input type="text" name="destination" value="{{ destination or '' }}">
+        {% if errors and errors.destination %}
+            <span style="color: red">{{ errors.destination }}</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <label>Дата поездки:</label>
+        <input type="date" name="date" value="{{ date or '' }}">
+        {% if errors and errors.date %}
+            <span style="color: red">{{ errors.date }}</span>
+        {% endif %}
+    </div>
+
+    <div>
+        <label>
+            <input type="checkbox" name="insurance" {{ 'checked' if insurance == 'on' else '' }}>
+            Нужна страховка
+        </label>
+    </div>
+
+    <div>
+        <button type="submit">Оформить билет</button>
+    </div>
+</form>
+{% endblock %}

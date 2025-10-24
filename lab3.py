@@ -115,3 +115,71 @@ def reset_settings():
     resp.delete_cookie('font_size')
     resp.delete_cookie('font_style')
     return resp
+
+
+@lab3.route('/lab3/train')
+def train_form():
+    return render_template('lab3/train_form.html')
+
+@lab3.route('/lab3/train_ticket')
+def train_ticket():
+    # Получаем данные из формы
+    fio = request.args.get('fio')
+    shelf = request.args.get('shelf')
+    linen = request.args.get('linen')
+    baggage = request.args.get('baggage')
+    age = request.args.get('age')
+    departure = request.args.get('departure')
+    destination = request.args.get('destination')
+    date = request.args.get('date')
+    insurance = request.args.get('insurance')
+
+    # Проверка на пустые поля
+    errors = {}
+    if not fio:
+        errors['fio'] = 'Заполните ФИО пассажира'
+    if not shelf:
+        errors['shelf'] = 'Выберите полку'
+    if not age:
+        errors['age'] = 'Заполните возраст'
+    elif not age.isdigit() or not (1 <= int(age) <= 120):
+        errors['age'] = 'Возраст должен быть от 1 до 120 лет'
+    if not departure:
+        errors['departure'] = 'Заполните пункт выезда'
+    if not destination:
+        errors['destination'] = 'Заполните пункт назначения'
+    if not date:
+        errors['date'] = 'Выберите дату поездки'
+
+    if errors:
+        return render_template('lab3/train_form.html', errors=errors, 
+                             fio=fio, shelf=shelf, linen=linen, baggage=baggage,
+                             age=age, departure=departure, destination=destination,
+                             date=date, insurance=insurance)
+
+    # Расчет стоимости
+    if int(age) < 18:
+        ticket_type = "Детский билет"
+        base_price = 700
+    else:
+        ticket_type = "Взрослый билет"
+        base_price = 1000
+
+    # Доплаты
+    additional_cost = 0
+    if shelf in ['lower', 'lower-side']:
+        additional_cost += 100
+    if linen == 'on':
+        additional_cost += 75
+    if baggage == 'on':
+        additional_cost += 250
+    if insurance == 'on':
+        additional_cost += 150
+
+    total_price = base_price + additional_cost
+
+    return render_template('lab3/train_ticket.html',
+                         fio=fio, shelf=shelf, linen=linen, baggage=baggage,
+                         age=age, departure=departure, destination=destination,
+                         date=date, insurance=insurance, ticket_type=ticket_type,
+                         total_price=total_price)
