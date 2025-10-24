@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block lab %}Заказ успешно оплачен{% endblock %}
+
+{% block main %}
+<div>
+    <h1>Спасибо, ваш заказ оплачен на сумму {{ price }} рублей.<br>Ожидайте доставку!</h1>
+    <a href="/lab3/order">Вернуться к заказу</a>
+</div>
+{% endblock %}
