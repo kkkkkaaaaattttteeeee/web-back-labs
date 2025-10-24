@@ -69,3 +69,48 @@ def pay():
 def success():
         price = request.args.get('price',0)
         return render_template('lab3/success.html',  price=price)
+
+
+@lab3.route('/lab3/settings')
+def settings():
+    # Получаем параметры из GET-запроса
+    color = request.args.get('color')
+    bg_color = request.args.get('bg_color')
+    font_size = request.args.get('font_size')
+    font_style = request.args.get('font_style')
+    
+    # Если есть параметры в запросе - устанавливаем куки
+    if any([color, bg_color, font_size, font_style]):
+        resp = make_response(redirect(url_for('lab3.settings')))
+        if color:
+            resp.set_cookie('color', color)
+        if bg_color:
+            resp.set_cookie('bg_color', bg_color)
+        if font_size:
+            resp.set_cookie('font_size', font_size)
+        if font_style:
+            resp.set_cookie('font_style', font_style)
+        return resp
+
+    # Получаем значения из куки
+    color = request.cookies.get('color')
+    bg_color = request.cookies.get('bg_color')
+    font_size = request.cookies.get('font_size')
+    font_style = request.cookies.get('font_style')
+    
+    resp = make_response(render_template('lab3/settings.html', 
+                                        color=color, 
+                                        bg_color=bg_color, 
+                                        font_size=font_size, 
+                                        font_style=font_style))
+    return resp
+
+
+@lab3.route('/lab3/reset_settings')
+def reset_settings():
+    resp = make_response(redirect(url_for('lab3.settings')))
+    resp.delete_cookie('color')
+    resp.delete_cookie('bg_color')
+    resp.delete_cookie('font_size')
+    resp.delete_cookie('font_style')
+    return resp

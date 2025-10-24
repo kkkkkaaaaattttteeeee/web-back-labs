@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 3{% endblock %}
+
+{% block main %}
+    <h1>Настройки внешнего вида</h1>
+    <form>
+        <div> 
+            <label for="color">Выберите цвет текста:</label>
+            <input type="color" id="color" name="color" value="{{ color or '#000000' }}">
+        </div>
+        
+        <div> 
+            <label for="bg_color">Выберите цвет фона:</label>
+            <input type="color" id="bg_color" name="bg_color" value="{{ bg_color or '#ffffff' }}">
+        </div>
+        
+        <div>
+            <label for="font_size">Выберите размер шрифта:</label>
+            <select id="font_size" name="font_size">
+                <option value="small" {{ 'selected' if font_size == 'small' else '' }}>Мелкий</option>
+                <option value="medium" {{ 'selected' if font_size == 'medium' or not font_size else '' }}>Средний</option>
+                <option value="large" {{ 'selected' if font_size == 'large' else '' }}>Крупный</option>
+                <option value="x-large" {{ 'selected' if font_size == 'x-large' else '' }}>Очень крупный</option>
+            </select>
+        </div>
+        
+        <div>
+            <label>Выберите стиль шрифта:</label><br>
+            <label>
+                <input type="radio" name="font_style" value="normal" {{ 'checked' if font_style == 'normal' or not font_style else '' }}> Обычный
+            </label>
+            <label>
+                <input type="radio" name="font_style" value="italic" {{ 'checked' if font_style == 'italic' else '' }}> Курсив
+            </label>
+            <label>
+                <input type="radio" name="font_style" value="bold" {{ 'checked' if font_style == 'bold' else '' }}> Жирный
+            </label>
+        </div>
+        
+        <div>
+            <button type="submit">Применить</button>
+        </div>
+    </form>
+    
+    
+    <div style="margin-top: 20px;">
+        <a href="{{ url_for('lab3.reset_settings') }}">Сбросить настройки</a>
+    </div>
+{% endblock %}
