@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 
-{# номер лабораторной работы: #}
 {% block lab %}Лабораторная работа 3{% endblock %}
 
-{# основной контент: #}
 {% block main %}
 <h1>Формы cookie</h1>
-<div>Привет, <span style="color: {{name_color}}">{{ name }}</span>!</div>
+<div>Привет, <span style="color: {{name_color or 'black'}}">{{ name or 'Аноним' }}</span>{% if age %}, {{ age }} лет{% endif %}!</div>
 <div>Список сделанных страниц</div>
 <ol>
 <li> 
@@ -24,5 +22,4 @@
 </ol>
 
 <p><a href="/lab3/del_cookie">Очистить куки</a></p>
-
 {% endblock %}
