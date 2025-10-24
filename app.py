@@ -39,7 +39,7 @@ def index():
 
 @app.errorhandler(500)
 def internal_error(err):
-    return render_template('500.html'), 500
+    return render_template('lab1/500.html'), 500
 
 
 
@@ -73,10 +73,10 @@ def not_found(err):
             'log_entries': log_entries
         }
         
-        return render_template('404.html', **context), 404
+        return render_template('lab1/404.html', **context), 404
     
     except Exception as e:
         # Fallback если что-то пошло не так
         app.logger.error(f'Error in 404 handler: {e}')
-        return render_template('404.html'), 404
+        return render_template('lab1/404.html'), 404
     

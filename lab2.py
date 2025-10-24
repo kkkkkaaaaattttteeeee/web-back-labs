@@ -19,7 +19,7 @@ flower_list = [
 
 @lab2.route('/lab2/all_flowers')
 def all_flowers():
-    return render_template('all_flowers.html', flowers=flower_list)
+    return render_template('lab2/all_flowers.html', flowers=flower_list)
 
 
 @lab2.route('/lab2/flowers/<int:flower_id>')
@@ -67,7 +67,7 @@ def example():
         {'name': 'мандарины', 'price': 95},
         {'name': 'манго', 'price': 321}
     ]
-    return render_template('example.html', name=name, nomer=nomer, nomer_cursa=nomer_cursa, fruits=fruits)
+    return render_template('lab2/example.html', name=name, nomer=nomer, nomer_cursa=nomer_cursa, fruits=fruits)
 
 
 @lab2.route('/lab2/')
@@ -104,7 +104,7 @@ def lab():
 @lab2.route('/lab2/filters')
 def filter() :
     phrase = "0 <b>сколько</b> <u>нам</u≥ <i>открытий</i> чудных..."
-    return render_template('filter.html', phrase = phrase)
+    return render_template('lab2/filter.html', phrase = phrase)
 
 
 @lab2.route('/lab2/add_flower', methods=['POST'])
@@ -161,7 +161,7 @@ books = [
 
 @lab2.route('/lab2/books')
 def show_books():
-    return render_template('books.html', books=books)
+    return render_template('lab2/books.html', books=books)
 
 berries = [
     {"name": "Клубника", "image": "strawberry.jpg", "description": "Сладкая красная ягода, богатая витамином C"},
@@ -188,7 +188,7 @@ berries = [
 
 @lab2.route('/lab2/berries')
 def show_berries():
-    return render_template('berries.html', berries=berries)
+    return render_template('lab2/berries.html', berries=berries)
 
 @lab2.route('/lab2/delete_flower/<int:flower_id>')
 def delete_flower(flower_id):

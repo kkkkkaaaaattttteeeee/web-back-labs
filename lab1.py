@@ -76,8 +76,8 @@ def author():
 
 @lab1.route("/lab1/image")
 def image():
-    path = url_for("static", filename="oak.jpg")
-    css_path = url_for("static", filename="lab1.css")
+    path = url_for("static", filename="lab1/oak.jpg")
+    css_path = url_for("static", filename="lab1/lab1.css")
     return """<!doctype html>
         <html>
         <head>
@@ -105,18 +105,22 @@ def counter():
     url = request.url
     client_ip = request.remote_addr
     count += 1
-    return """
-<!doctype html>
-    <html>
-        <body>
-            Сколько раз вы сюда заходили: """ + str(count) + """
-            <hr>
-            Дата и время: """ + str(time) + """
-            <br> Запрошенный адрес: """ + url + """
-            <br> Ваш IP адрес: """ + client_ip + """
-            <a href = """ + url_for('reset_counter') + """>Сбросить счетчик</a>
-        </body>
-    </html>"""
+    return f"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Counter Page</title>
+</head>
+<body>
+    Сколько раз вы сюда заходили: {count}<br/>
+    Дата и время: {time}<br/>
+    Запрошенный адрес: {url}<br/>
+    Ваш IP адрес: {client_ip}<br/>
+    <a href="{url_for('lab1.reset_counter')}">Сбросить счетчик</a>
+</body>
+</html>
+"""
 
 
 @lab1.route("/lab1/info")
@@ -128,7 +132,7 @@ def info():
 def reset_counter():
     global count
     count = 0
-    return redirect(url_for('counter'))
+    return redirect(url_for('lab1.counter'))
 
 
 @lab1.route("/create")
