@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 3{% endblock %}
+
+{% block main %}
+<h1>Поиск товаров</h1>
+
+<form action="/lab3/products">
+    <div style="margin-bottom: 20px;">
+        <label>Минимальная цена:</label>
+        <input type="number" name="min_price" 
+               placeholder="от {{ min_all_price }} руб." 
+               value="{{ current_min }}">
+        
+        <label style="margin-left: 20px;">Максимальная цена:</label>
+        <input type="number" name="max_price" 
+               placeholder="до {{ max_all_price }} руб." 
+               value="{{ current_max }}">
+    </div>
+    
+    <div>
+        <button type="submit">Искать</button>
+        <button type="submit" name="reset" value="1" style="margin-left: 10px;">Сброс</button>
+    </div>
+</form>
+
+<hr>
+
+<div style="margin: 20px 0;">
+    <strong>Найдено товаров: {{ products_count }} из {{ all_products_count }}</strong>
+</div>
+
+{% if products_count == 0 %}
+    <div style="color: #666; text-align: center; padding: 40px;">
+        <h3>😔 Не найдено ни одного товара</h3>
+        <p>Попробуйте изменить диапазон цен</p>
+    </div>
+{% else %}
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px;">
+        {% for product in products %}
+        <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: white;">
+            <h3 style="margin-top: 0;">{{ product.name }}</h3>
+            <div><strong>Цена:</strong> {{ product.price }} руб.</div>
+            <div><strong>Бренд:</strong> {{ product.brand }}</div>
+            <div><strong>Цвет:</strong> {{ product.color }}</div>
+        </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div style="margin-top: 30px;">
+    <a href="/lab3/">← Назад к списку страниц</a>
+</div>
+{% endblock %}
