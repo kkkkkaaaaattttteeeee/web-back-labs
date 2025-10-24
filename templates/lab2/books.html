@@ -1,8 +1,11 @@
+{% extends "base.html" %}
+
 <!DOCTYPE html>
 <html>
 <head>
     <title>Список книг</title>
 </head>
+{% block main %}
 <body>
     <h1>Список книг</h1>
     <table border="1">
@@ -24,3 +27,4 @@
     <p>Всего книг: {{ books|length }}</p>
 </body>
 </html>
+{% endblock %}
