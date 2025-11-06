@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block lab %}Возведение в степень{% endblock %}
+
+{% block main %}
+    <form method="post">
+        <h1>Возведение в степень</h1>
+        {% if error %}
+            <div style="color: red; margin-bottom: 20px;">
+                {{ error }}
+            </div>
+        {% endif %}
+        <div>
+            <input type="number" name="x1" placeholder="Основание" step="any" required> 
+            <sup>
+                <input type="number" name="x2" placeholder="Показатель степени" step="any" required>
+            </sup>
+        </div>
+        <div>
+            <input type="submit" value="Возвести в степень">
+        </div>
+        {% if result is defined %}
+            <div style="margin-top: 20px;">
+                <h2>Результат: {{ x1 }}<sup>{{ x2 }}</sup> = {{ result }}</h2>
+            </div>
+        {% endif %}
+        <div style="margin-top: 20px;">
+            <a href="/lab4/">Вернуться к выбору операции</a>
+        </div>
+    </form>
+{% endblock %}

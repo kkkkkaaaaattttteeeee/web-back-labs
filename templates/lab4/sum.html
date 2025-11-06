@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block lab %}Суммирование чисел{% endblock %}
+
+{% block main %}
+    <form method="post">
+        <h1>Суммирование чисел</h1>
+        <div>
+            <input type="number" name="x1" placeholder="Первое число" step="any"> 
+            + 
+            <input type="number" name="x2" placeholder="Второе число" step="any">
+        </div>
+        <div>
+            <input type="submit" value="Сложить">
+        </div>
+        {% if result is defined %}
+            <div style="margin-top: 20px;">
+                <h2>Результат: {{ x1 }} + {{ x2 }} = {{ result }}</h2>
+            </div>
+        {% endif %}
+        <div style="margin-top: 20px;">
+            <a href="/lab4/">Вернуться к выбору операции</a>
+        </div>
+    </form>
+{% endblock %}

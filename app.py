@@ -83,3 +83,4 @@ def not_found(err):
         app.logger.error(f'Error in 404 handler: {e}')
         return render_template('lab1/404.html'), 404
     
+    

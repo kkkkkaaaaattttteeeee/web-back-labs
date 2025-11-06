@@ -30,3 +30,71 @@ def div():
     
     result = x1 / x2
     return render_template('lab4/div.html', x1=x1, x2=x2, result=result)
+
+
+# Суммирование
+@lab4.route('/lab4/sum', methods=['GET', 'POST'])
+def sum_numbers():
+    if request.method == 'POST':
+        x1 = request.form.get('x1', '0')  # По умолчанию 0
+        x2 = request.form.get('x2', '0')  # По умолчанию 0
+        
+        x1 = float(x1) if x1 else 0
+        x2 = float(x2) if x2 else 0
+        
+        result = x1 + x2
+        return render_template('lab4/sum.html', x1=x1, x2=x2, result=result)
+    return render_template('lab4/sum.html')
+
+# Умножение
+@lab4.route('/lab4/multiply', methods=['GET', 'POST'])
+def multiply():
+    if request.method == 'POST':
+        x1 = request.form.get('x1', '1')  # По умолчанию 1
+        x2 = request.form.get('x2', '1')  # По умолчанию 1
+        
+        x1 = float(x1) if x1 else 1
+        x2 = float(x2) if x2 else 1
+        
+        result = x1 * x2
+        return render_template('lab4/multiply.html', x1=x1, x2=x2, result=result)
+    return render_template('lab4/multiply.html')
+
+# Вычитание
+@lab4.route('/lab4/subtract', methods=['GET', 'POST'])
+def subtract():
+    if request.method == 'POST':
+        x1 = request.form.get('x1')
+        x2 = request.form.get('x2')
+        
+        if x1 == '' or x2 == '':
+            return render_template('lab4/subtract.html', error='Оба поля должны быть заполнены')
+        
+        x1 = float(x1)
+        x2 = float(x2)
+        
+        result = x1 - x2
+        return render_template('lab4/subtract.html', x1=x1, x2=x2, result=result)
+    return render_template('lab4/subtract.html')
+
+# Возведение в степень
+@lab4.route('/lab4/power', methods=['GET', 'POST'])
+def power():
+    if request.method == 'POST':
+        x1 = request.form.get('x1')
+        x2 = request.form.get('x2')
+        
+        if x1 == '' or x2 == '':
+            return render_template('lab4/power.html', error='Оба поля должны быть заполнены')
+        
+        x1 = float(x1)
+        x2 = float(x2)
+        
+        # Проверка: оба числа не могут быть нулями
+        if x1 == 0 and x2 == 0:
+            return render_template('lab4/power.html', error='Ошибка: оба числа не могут быть нулями')
+        
+        result = x1 ** x2
+        return render_template('lab4/power.html', x1=x1, x2=x2, result=result)
+    return render_template('lab4/power.html')
+
