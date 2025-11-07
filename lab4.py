@@ -168,3 +168,4 @@ def logout():
     session.pop('user_name', None)
     session.pop('gender', None)
     return redirect('/lab4/login')
+
