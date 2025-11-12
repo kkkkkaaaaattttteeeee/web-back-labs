@@ -17,18 +17,37 @@
                     display: inline-block;">
             <a href="/lab5/create">Создать статью</a>
         </span>
-        <span style="border: 5px solid pink; 
-                    background-color: lightcyan; 
-                    padding: 10px; 
-                    display: inline-block;">
-            <a href="/lab5/login">Войти</a>
-        </span>
-        <span style="border: 5px solid pink; 
-                    background-color: lightcyan; 
-                    padding: 10px; 
-                    display: inline-block;">
-            <a href="/lab5/register">Регистрация </a>
-        </span>
+        
+        {% if session.get('user_login') %}
+            <!-- Если пользователь вошел -->
+            <span style="border: 5px solid pink; 
+                        background-color: lightcyan; 
+                        padding: 10px; 
+                        display: inline-block;">
+                <a href="/lab5/logout">Выйти</a>
+            </span>
+        {% else %}
+            <!-- Если пользователь не вошел -->
+            <span style="border: 5px solid pink; 
+                        background-color: lightcyan; 
+                        padding: 10px; 
+                        display: inline-block;">
+                <a href="/lab5/login">Войти</a>
+            </span>
+            <span style="border: 5px solid pink; 
+                        background-color: lightcyan; 
+                        padding: 10px; 
+                        display: inline-block;">
+                <a href="/lab5/register">Регистрация</a>
+            </span>
+        {% endif %}
     </div>
-    <div style="color: orange; margin: 10px 0;">Anonymous</div>
-{% endblock %} 
+    
+    <div style="color: orange; margin: 10px 0;">
+        {% if session.get('user_login') %}
+            Добро пожаловать, {{ session['user_login'] }}!
+        {% else %}
+            Anonymous
+        {% endif %}
+    </div>
+{% endblock %}
