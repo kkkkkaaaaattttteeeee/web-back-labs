@@ -133,3 +133,26 @@ def create():
     
     except Exception as e:
         return render_template('lab5/create_article.html', error=f'Ошибка при создании статьи: {str(e)}')
+    
+
+@lab5.route('/lab5/list')
+def list():
+    login = session.get('user_login')
+    if not login:
+        return redirect('/lab5/login')
+    
+    conn, cur = db_connect()
+
+    cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+    user = cur.fetchone()
+    if not user:
+        db_close(conn,cur)
+        return redirect('lab5/login')
+    
+    user_id = user["id"]
+
+    cur.execute("SELECT * FROM articles WHERE user_id = %s;", (user_id,))
+    articles = cur.fetchall()
+
+    db_close(conn,cur)
+    return render_template('/lab5/articles.html', articles=articles)
