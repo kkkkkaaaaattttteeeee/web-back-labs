@@ -20,10 +20,10 @@ def db_connect():
             )
         cur = conn.cursor(cursor_factory= RealDictCursor)
     else:
-        dir_path = path.dirname(path.reallpath(__file__))
+        dir_path = path.dirname(path.realpath(__file__))
         db_path = path.join(dir_path, "database.db")
-        conn.row_factory = sqlite3.Row
         conn = sqlite3.connect(db_path)
+        conn.row_factory = sqlite3.Row
         cur = conn.cursor()
 
     return conn, cur
@@ -48,7 +48,10 @@ def register():
         # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ПОДКЛЮЧЕНИЯ
         conn, cur = db_connect()
         
-        cur.execute("SELECT login FROM users WHERE login = %s", (login,))
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT login FROM users WHERE login = %s;", (login,))
+        else:
+            cur.execute("SELECT login FROM users WHERE login = ?;", (login,))
         if cur.fetchone():
             db_close(conn, cur)
             return render_template('lab5/register.html', error="Такой пользователь уже существует")
@@ -56,8 +59,12 @@ def register():
         from werkzeug.security import generate_password_hash
         hashed_password = generate_password_hash(password)
         
-        cur.execute("INSERT INTO users (login, password) VALUES (%s, %s)", 
-                   (login, hashed_password))
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("INSERT INTO users (login, password) VALUES (%s, %s)", 
+                       (login, hashed_password))
+        else:
+            cur.execute("INSERT INTO users (login, password) VALUES (?, ?)", 
+                       (login, hashed_password))
         
         # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ЗАКРЫТИЯ
         db_close(conn, cur)
@@ -82,7 +89,10 @@ def login():
         # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ПОДКЛЮЧЕНИЯ
         conn, cur = db_connect()
         
-        cur.execute("SELECT * FROM users WHERE login= %s", (login,))
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+        else:
+            cur.execute("SELECT * FROM users WHERE login = ?;", (login,))
         user = cur.fetchone()
 
         if not user:
@@ -125,7 +135,10 @@ def create():
     try:
         conn, cur = db_connect()
 
-        cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+        else:
+            cur.execute("SELECT * FROM users WHERE login = ?;", (login,))
         user = cur.fetchone()
         
         if not user:
@@ -134,8 +147,12 @@ def create():
         
         login_id = user["id"]
 
-        cur.execute("INSERT INTO articles (user_id, title, article_text) VALUES (%s, %s, %s);", 
-                   (login_id, title, article_text))
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("INSERT INTO articles (user_id, title, article_text) VALUES (%s, %s, %s);", 
+                       (login_id, title, article_text))
+        else:
+            cur.execute("INSERT INTO articles (user_id, title, article_text) VALUES (?, ?, ?);", 
+                       (login_id, title, article_text))
         
         db_close(conn, cur)
         return redirect('/lab5')
@@ -152,7 +169,10 @@ def list():
     
     conn, cur = db_connect()
 
-    cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+    if current_app.config['DB_TYPE'] == 'postgres':
+        cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+    else:
+        cur.execute("SELECT * FROM users WHERE login = ?;", (login,))
     user = cur.fetchone()
     if not user:
         db_close(conn,cur)
@@ -160,7 +180,10 @@ def list():
     
     user_id = user["id"]
 
-    cur.execute("SELECT * FROM articles WHERE user_id = %s;", (user_id,))
+    if current_app.config['DB_TYPE'] == 'postgres':
+        cur.execute("SELECT * FROM articles WHERE user_id = %s;", (user_id,))
+    else:
+        cur.execute("SELECT * FROM articles WHERE user_id = ?;", (user_id,))
     articles = cur.fetchall()
 
     db_close(conn,cur)
