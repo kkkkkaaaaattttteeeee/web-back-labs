@@ -45,7 +45,6 @@ def register():
         return render_template('lab5/register.html', error='Заполните все поля')
     
     try:
-        # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ПОДКЛЮЧЕНИЯ
         conn, cur = db_connect()
         
         if current_app.config['DB_TYPE'] == 'postgres':
@@ -56,7 +55,6 @@ def register():
             db_close(conn, cur)
             return render_template('lab5/register.html', error="Такой пользователь уже существует")
 
-        from werkzeug.security import generate_password_hash
         hashed_password = generate_password_hash(password)
         
         if current_app.config['DB_TYPE'] == 'postgres':
@@ -66,9 +64,7 @@ def register():
             cur.execute("INSERT INTO users (login, password) VALUES (?, ?)", 
                        (login, hashed_password))
         
-        # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ЗАКРЫТИЯ
         db_close(conn, cur)
-        
         return render_template('lab5/success.html', login=login)
         
     except Exception as e:
@@ -86,7 +82,6 @@ def login():
         return render_template('lab5/login.html', error="Заполните поля")
     
     try:
-        # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ПОДКЛЮЧЕНИЯ
         conn, cur = db_connect()
         
         if current_app.config['DB_TYPE'] == 'postgres':
@@ -99,16 +94,14 @@ def login():
             db_close(conn, cur)
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
-        from werkzeug.security import check_password_hash
         if not check_password_hash(user['password'], password):
             db_close(conn, cur)
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
         session['user_login'] = login
+        session['user_id'] = user['id']  # Сохраняем ID пользователя в сессии
         
-        # ИСПОЛЬЗУЕМ ФУНКЦИЮ ДЛЯ ЗАКРЫТИЯ
         db_close(conn, cur)
-    
         return render_template('lab5/success_login.html', login=login)
 
     except Exception as e:
@@ -117,8 +110,8 @@ def login():
 @lab5.route('/lab5/logout')
 def logout():
     session.pop('user_login', None)
+    session.pop('user_id', None)
     return redirect('/lab5')
-
 
 @lab5.route('/lab5/create', methods = ['GET', 'POST'])
 def create():
@@ -132,21 +125,38 @@ def create():
     title = request.form.get('title')
     article_text = request.form.get('article_text')
 
+    if not title or not article_text:
+        return render_template('lab5/create_article.html', error='Заполните все поля')
+
     try:
         conn, cur = db_connect()
 
-        if current_app.config['DB_TYPE'] == 'postgres':
-            cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
+        # Способ 1: Используем ID пользователя из сессии (более надежно)
+        user_id = session.get('user_id')
+        
+        if user_id:
+            # Если ID пользователя есть в сессии, используем его
+            login_id = user_id
+            print(f"Используем user_id из сессии: {login_id}")
         else:
-            cur.execute("SELECT * FROM users WHERE login = ?;", (login,))
-        user = cur.fetchone()
-        
-        if not user:
-            db_close(conn, cur)
-            return render_template('lab5/create_article.html', error="Пользователь не найден")
-        
-        login_id = user["id"]
+            # Способ 2: Получаем ID пользователя из базы данных
+            if current_app.config['DB_TYPE'] == 'postgres':
+                cur.execute("SELECT id FROM users WHERE login = %s;", (login,))
+            else:
+                cur.execute("SELECT id FROM users WHERE login = ?;", (login,))
+            user = cur.fetchone()
+            
+            if not user:
+                db_close(conn, cur)
+                return render_template('lab5/create_article.html', error="Пользователь не найден")
+            
+            login_id = user["id"]
+            print(f"Получили user_id из базы: {login_id}")
 
+        # Отладочная информация
+        print(f"Создание статьи: login_id={login_id}, title='{title}', article_text='{article_text[:50]}...'")
+
+        # Вставляем статью с правильным login_id
         if current_app.config['DB_TYPE'] == 'postgres':
             cur.execute("INSERT INTO articles (login_id, title, article_text) VALUES (%s, %s, %s);", 
                        (login_id, title, article_text))
@@ -158,33 +168,43 @@ def create():
         return redirect('/lab5')
     
     except Exception as e:
+        print(f"Ошибка при создании статьи: {str(e)}")
         return render_template('lab5/create_article.html', error=f'Ошибка при создании статьи: {str(e)}')
-    
 
 @lab5.route('/lab5/list')
-def list():
+def list_articles():
     login = session.get('user_login')
     if not login:
         return redirect('/lab5/login')
     
-    conn, cur = db_connect()
+    try:
+        conn, cur = db_connect()
 
-    if current_app.config['DB_TYPE'] == 'postgres':
-        cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
-    else:
-        cur.execute("SELECT * FROM users WHERE login = ?;", (login,))
-    user = cur.fetchone()
-    if not user:
-        db_close(conn,cur)
-        return redirect('lab5/login')
+        # Используем ID из сессии или получаем из базы
+        user_id = session.get('user_id')
+        if not user_id:
+            if current_app.config['DB_TYPE'] == 'postgres':
+                cur.execute("SELECT id FROM users WHERE login = %s;", (login,))
+            else:
+                cur.execute("SELECT id FROM users WHERE login = ?;", (login,))
+            user = cur.fetchone()
+            
+            if not user:
+                db_close(conn, cur)
+                return redirect('/lab5/login')
+            
+            user_id = user["id"]
+
+        # Получаем статьи пользователя
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT * FROM articles WHERE login_id = %s;", (user_id,))
+        else:
+            cur.execute("SELECT * FROM articles WHERE login_id = ?;", (user_id,))
+        articles = cur.fetchall()
+
+        db_close(conn, cur)
+        return render_template('lab5/articles.html', articles=articles)
     
-    user_id = user["id"]
-
-    if current_app.config['DB_TYPE'] == 'postgres':
-        cur.execute("SELECT * FROM articles WHERE login_id = %s;", (user_id,))
-    else:
-        cur.execute("SELECT * FROM articles WHERE login_id = ?;", (user_id,))
-    articles = cur.fetchall()
-
-    db_close(conn,cur)
-    return render_template('/lab5/articles.html', articles=articles)
+    except Exception as e:
+        print(f"Ошибка в list_articles: {str(e)}")
+        return render_template('lab5/articles.html', articles=[], error=f"Ошибка при загрузке статей: {str(e)}")
