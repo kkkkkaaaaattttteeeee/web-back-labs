@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, redirect, session, current_app
+from flask import Blueprint, request, render_template, redirect, session, current_app, flash
 lab5 = Blueprint('lab5', __name__)
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -8,7 +8,7 @@ from os import path
 
 @lab5.route('/lab5/')
 def lab():
-    return render_template('lab5/lab5.html', login=session.get('login'))
+    return render_template('lab5/lab5.html', login=session.get('user_login'))
 
 def db_connect():
     if current_app.config['DB_TYPE'] == 'postgres':
@@ -43,6 +43,12 @@ def register():
 
     if not login or not password:
         return render_template('lab5/register.html', error='Заполните все поля')
+    
+    if len(login) < 3:
+        return render_template('lab5/register.html', error='Логин должен содержать минимум 3 символа')
+    
+    if len(password) < 4:
+        return render_template('lab5/register.html', error='Пароль должен содержать минимум 4 символа')
     
     try:
         conn, cur = db_connect()
@@ -79,7 +85,7 @@ def login():
     password = request.form.get('password')
 
     if not login or not password:
-        return render_template('lab5/login.html', error="Заполните поля")
+        return render_template('lab5/login.html', error="Заполните все поля")
     
     try:
         conn, cur = db_connect()
@@ -99,7 +105,7 @@ def login():
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
         session['user_login'] = login
-        session['user_id'] = user['id']  # Сохраняем ID пользователя в сессии
+        session['user_id'] = user['id']
         
         db_close(conn, cur)
         return render_template('lab5/success_login.html', login=login)
@@ -111,6 +117,7 @@ def login():
 def logout():
     session.pop('user_login', None)
     session.pop('user_id', None)
+    flash('Вы успешно вышли из системы', 'success')
     return redirect('/lab5')
 
 @lab5.route('/lab5/create', methods = ['GET', 'POST'])
@@ -122,54 +129,130 @@ def create():
     if request.method == 'GET':
         return render_template('lab5/create_article.html')
     
-    title = request.form.get('title')
-    article_text = request.form.get('article_text')
+    title = request.form.get('title', '').strip()
+    article_text = request.form.get('article_text', '').strip()
 
-    if not title or not article_text:
-        return render_template('lab5/create_article.html', error='Заполните все поля')
+    if not title:
+        return render_template('lab5/create_article.html', error='Введите название статьи')
+    
+    if not article_text:
+        return render_template('lab5/create_article.html', error='Введите текст статьи')
+    
+    if len(title) > 50:
+        return render_template('lab5/create_article.html', error='Название статьи не должно превышать 50 символов')
 
     try:
         conn, cur = db_connect()
-
-        # Способ 1: Используем ID пользователя из сессии (более надежно)
         user_id = session.get('user_id')
-        
-        if user_id:
-            # Если ID пользователя есть в сессии, используем его
-            login_id = user_id
-            print(f"Используем user_id из сессии: {login_id}")
-        else:
-            # Способ 2: Получаем ID пользователя из базы данных
-            if current_app.config['DB_TYPE'] == 'postgres':
-                cur.execute("SELECT id FROM users WHERE login = %s;", (login,))
-            else:
-                cur.execute("SELECT id FROM users WHERE login = ?;", (login,))
-            user = cur.fetchone()
-            
-            if not user:
-                db_close(conn, cur)
-                return render_template('lab5/create_article.html', error="Пользователь не найден")
-            
-            login_id = user["id"]
-            print(f"Получили user_id из базы: {login_id}")
 
-        # Отладочная информация
-        print(f"Создание статьи: login_id={login_id}, title='{title}', article_text='{article_text[:50]}...'")
-
-        # Вставляем статью с правильным login_id
         if current_app.config['DB_TYPE'] == 'postgres':
             cur.execute("INSERT INTO articles (login_id, title, article_text) VALUES (%s, %s, %s);", 
-                       (login_id, title, article_text))
+                       (user_id, title, article_text))
         else:
             cur.execute("INSERT INTO articles (login_id, title, article_text) VALUES (?, ?, ?);", 
-                       (login_id, title, article_text))
+                       (user_id, title, article_text))
         
         db_close(conn, cur)
-        return redirect('/lab5')
+        flash('Статья успешно создана!', 'success')
+        return redirect('/lab5/list')
     
     except Exception as e:
-        print(f"Ошибка при создании статьи: {str(e)}")
         return render_template('lab5/create_article.html', error=f'Ошибка при создании статьи: {str(e)}')
+
+@lab5.route('/lab5/edit/<int:article_id>', methods=['GET', 'POST'])
+def edit_article(article_id):
+    login = session.get('user_login')
+    if not login:
+        return redirect('/lab5/login')
+    
+    try:
+        conn, cur = db_connect()
+        user_id = session.get('user_id')
+
+        # Проверяем, принадлежит ли статья пользователю
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT * FROM articles WHERE id = %s AND login_id = %s;", (article_id, user_id))
+        else:
+            cur.execute("SELECT * FROM articles WHERE id = ? AND login_id = ?;", (article_id, user_id))
+        
+        article = cur.fetchone()
+        
+        if not article:
+            db_close(conn, cur)
+            flash('Статья не найдена или у вас нет прав для ее редактирования', 'error')
+            return redirect('/lab5/list')
+
+        if request.method == 'GET':
+            db_close(conn, cur)
+            return render_template('lab5/edit_article.html', article=article)
+
+        # Обработка формы редактирования
+        title = request.form.get('title', '').strip()
+        article_text = request.form.get('article_text', '').strip()
+
+        if not title:
+            db_close(conn, cur)
+            return render_template('lab5/edit_article.html', article=article, error='Введите название статьи')
+        
+        if not article_text:
+            db_close(conn, cur)
+            return render_template('lab5/edit_article.html', article=article, error='Введите текст статьи')
+        
+        if len(title) > 50:
+            db_close(conn, cur)
+            return render_template('lab5/edit_article.html', article=article, error='Название статьи не должно превышать 50 символов')
+
+        # Обновляем статью
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("UPDATE articles SET title = %s, article_text = %s WHERE id = %s;", 
+                       (title, article_text, article_id))
+        else:
+            cur.execute("UPDATE articles SET title = ?, article_text = ? WHERE id = ?;", 
+                       (title, article_text, article_id))
+        
+        db_close(conn, cur)
+        flash('Статья успешно обновлена!', 'success')
+        return redirect('/lab5/list')
+    
+    except Exception as e:
+        return render_template('lab5/edit_article.html', article=article, error=f'Ошибка при редактировании статьи: {str(e)}')
+
+@lab5.route('/lab5/delete/<int:article_id>')
+def delete_article(article_id):
+    login = session.get('user_login')
+    if not login:
+        return redirect('/lab5/login')
+    
+    try:
+        conn, cur = db_connect()
+        user_id = session.get('user_id')
+
+        # Проверяем, принадлежит ли статья пользователю
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT * FROM articles WHERE id = %s AND login_id = %s;", (article_id, user_id))
+        else:
+            cur.execute("SELECT * FROM articles WHERE id = ? AND login_id = ?;", (article_id, user_id))
+        
+        article = cur.fetchone()
+        
+        if not article:
+            db_close(conn, cur)
+            flash('Статья не найдена или у вас нет прав для ее удаления', 'error')
+            return redirect('/lab5/list')
+
+        # Удаляем статью
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("DELETE FROM articles WHERE id = %s;", (article_id,))
+        else:
+            cur.execute("DELETE FROM articles WHERE id = ?;", (article_id,))
+        
+        db_close(conn, cur)
+        flash('Статья успешно удалена!', 'success')
+        return redirect('/lab5/list')
+    
+    except Exception as e:
+        flash(f'Ошибка при удалении статьи: {str(e)}', 'error')
+        return redirect('/lab5/list')
 
 @lab5.route('/lab5/list')
 def list_articles():
@@ -179,32 +262,17 @@ def list_articles():
     
     try:
         conn, cur = db_connect()
-
-        # Используем ID из сессии или получаем из базы
         user_id = session.get('user_id')
-        if not user_id:
-            if current_app.config['DB_TYPE'] == 'postgres':
-                cur.execute("SELECT id FROM users WHERE login = %s;", (login,))
-            else:
-                cur.execute("SELECT id FROM users WHERE login = ?;", (login,))
-            user = cur.fetchone()
-            
-            if not user:
-                db_close(conn, cur)
-                return redirect('/lab5/login')
-            
-            user_id = user["id"]
 
-        # Получаем статьи пользователя
         if current_app.config['DB_TYPE'] == 'postgres':
-            cur.execute("SELECT * FROM articles WHERE login_id = %s;", (user_id,))
+            cur.execute("SELECT * FROM articles WHERE login_id = %s ORDER BY id DESC;", (user_id,))
         else:
-            cur.execute("SELECT * FROM articles WHERE login_id = ?;", (user_id,))
+            cur.execute("SELECT * FROM articles WHERE login_id = ? ORDER BY id DESC;", (user_id,))
+        
         articles = cur.fetchall()
-
         db_close(conn, cur)
+        
         return render_template('lab5/articles.html', articles=articles)
     
     except Exception as e:
-        print(f"Ошибка в list_articles: {str(e)}")
-        return render_template('lab5/articles.html', articles=[], error=f"Ошибка при загрузке статей: {str(e)}")
+        return render_template('lab5/articles.html', articles=[], error=f'Ошибка при загрузке статей: {str(e)}')

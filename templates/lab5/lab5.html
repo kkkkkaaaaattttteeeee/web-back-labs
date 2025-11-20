@@ -3,51 +3,53 @@
 {% block lab %}Лабораторная работа 5{% endblock %}
 
 {% block main %}
+<div class="knowledge-base">
     <h1>База знаний</h1>
-    <div>
-        <span style="border: 5px solid pink; 
-                    background-color: lightcyan; 
-                    padding: 10px; 
-                    display: inline-block;">
-            <a href="/lab5/list">Список статей</a>
-        </span>
-        <span style="border: 5px solid pink; 
-                    background-color: lightcyan; 
-                    padding: 10px; 
-                    display: inline-block;">
-            <a href="/lab5/create">Создать статью</a>
-        </span>
-        
-        {% if session.get('user_login') %}
-            <!-- Если пользователь вошел -->
-            <span style="border: 5px solid pink; 
-                        background-color: lightcyan; 
-                        padding: 10px; 
-                        display: inline-block;">
-                <a href="/lab5/logout">Выйти</a>
-            </span>
-        {% else %}
-            <!-- Если пользователь не вошел -->
-            <span style="border: 5px solid pink; 
-                        background-color: lightcyan; 
-                        padding: 10px; 
-                        display: inline-block;">
-                <a href="/lab5/login">Войти</a>
-            </span>
-            <span style="border: 5px solid pink; 
-                        background-color: lightcyan; 
-                        padding: 10px; 
-                        display: inline-block;">
-                <a href="/lab5/register">Регистрация</a>
-            </span>
-        {% endif %}
-    </div>
     
-    <div style="color: orange; margin: 10px 0;">
+    <div class="user-info">
         {% if session.get('user_login') %}
-            Добро пожаловать, {{ session['user_login'] }}!
+            <div class="welcome-message">
+                <span class="user-greeting">👋 Добро пожаловать, <strong>{{ session['user_login'] }}</strong>!</span>
+            </div>
         {% else %}
-            Anonymous
+            <div class="anonymous-message">
+                <span>🔒 Вы вошли как <strong>Anonymous</strong></span>
+            </div>
         {% endif %}
     </div>
+
+    <div class="action-grid">
+        <div class="action-card">
+            <h3>📚 Статьи</h3>
+            <p>Просмотр и управление вашими статьями</p>
+            <a href="/lab5/list" class="btn btn-primary">Перейти к статьям</a>
+        </div>
+
+        <div class="action-card">
+            <h3>✍️ Создать</h3>
+            <p>Написать новую статью</p>
+            <a href="/lab5/create" class="btn btn-primary">Создать статью</a>
+        </div>
+
+        {% if session.get('user_login') %}
+        <div class="action-card">
+            <h3>🚪 Выход</h3>
+            <p>Завершить текущую сессию</p>
+            <a href="/lab5/logout" class="btn btn-secondary">Выйти из системы</a>
+        </div>
+        {% else %}
+        <div class="action-card">
+            <h3>🔐 Вход</h3>
+            <p>Войти в свою учетную запись</p>
+            <a href="/lab5/login" class="btn btn-primary">Войти в систему</a>
+        </div>
+
+        <div class="action-card">
+            <h3>📝 Регистрация</h3>
+            <p>Создать новую учетную запись</p>
+            <a href="/lab5/register" class="btn btn-secondary">Зарегистрироваться</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

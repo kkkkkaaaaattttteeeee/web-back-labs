@@ -3,27 +3,36 @@
 {% block lab %}Лабораторная работа 5{% endblock %}
 
 {% block main %}
+<div class="auth-container">
     <h1>Регистрация</h1>
 
     {% if error %}
-        <div>
-            {{ error }}
-        </div>
+        <div class="error-message">{{ error }}</div>
     {% endif %}
 
-    <form action="/lab5/register" method="post">
-        <div>
-            <label>
-                Логин: <input type="text" name="login">
-            </label>
+    <form action="/lab5/register" method="post" class="auth-form">
+        <div class="form-group">
+            <label for="login">Логин:</label>
+            <input type="text" id="login" name="login" 
+                   value="{{ request.form.login }}" 
+                   placeholder="Придумайте логин (минимум 3 символа)" 
+                   minlength="3" required>
+            <small>Минимум 3 символа</small>
         </div>
 
-        <div> 
-            <label>
-                Пароль: <input type="password" name="password">
-            </label>
+        <div class="form-group">
+            <label for="password">Пароль:</label>
+            <input type="password" id="password" name="password" 
+                   placeholder="Придумайте пароль (минимум 4 символа)" 
+                   minlength="4" required>
+            <small>Минимум 4 символа</small>
         </div>
-        <button type="submit">Зарегистрироваться</button>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
+            <a href="/lab5/login" class="btn btn-secondary">Уже есть аккаунт?</a>
+            <a href="/lab5" class="btn btn-link">Назад</a>
+        </div>
     </form>
-
+</div>
 {% endblock %}

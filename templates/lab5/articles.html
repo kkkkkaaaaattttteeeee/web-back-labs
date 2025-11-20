@@ -3,12 +3,51 @@
 {% block lab %}Лабораторная работа 5{% endblock %}
 
 {% block main %}
+<div class="articles-container">
+    <h1>Мои статьи</h1>
 
-    <h1>Статьи</h1>
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
 
-    {% for article in articles %}
-        <h2>{{ article['title'] }}</h2>
-        <blockquote>{{ article['article_text'] }}</blockquote>
-    {% endfor %}
+    {% if not articles %}
+        <div class="no-articles">
+            <div class="empty-state">
+                <h2>У вас пока нет статей</h2>
+                <p>Создайте свою первую статью, чтобы она появилась здесь</p>
+                <a href="/lab5/create" class="btn btn-primary">Создать первую статью</a>
+            </div>
+        </div>
+    {% else %}
+        <div class="articles-grid">
+            {% for article in articles %}
+            <div class="article-card">
+                <div class="article-header">
+                    <h2 class="article-title">{{ article['title'] }}</h2>
+                    <div class="article-actions">
+                        <a href="/lab5/edit/{{ article['id'] }}" class="btn btn-edit">✏️ Редактировать</a>
+                        <a href="/lab5/delete/{{ article['id'] }}" 
+                           class="btn btn-delete" 
+                           onclick="return confirm('Вы уверены, что хотите удалить эту статью?')">🗑️ Удалить</a>
+                    </div>
+                </div>
+                <div class="article-content">
+                    <p>{{ article['article_text'] }}</p>
+                </div>
+                <div class="article-footer">
+                    <small>ID: {{ article['id'] }}</small>
+                    {% if article.get('created_at') %}
+                    <small>Создано: {{ article['created_at'] }}</small>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% endif %}
 
+    <div class="action-buttons">
+        <a href="/lab5/create" class="btn btn-primary">Создать новую статью</a>
+        <a href="/lab5" class="btn btn-secondary">Назад к базе знаний</a>
+    </div>
+</div>
 {% endblock %}
