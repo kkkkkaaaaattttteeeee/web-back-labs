@@ -145,8 +145,9 @@ def create():
         conn, cur = db_connect()
         user_id = session.get('user_id')
 
+        # Для PostgreSQL используем user_id, для SQLite используем login_id
         if current_app.config['DB_TYPE'] == 'postgres':
-            cur.execute("INSERT INTO articles (login_id, title, article_text) VALUES (%s, %s, %s);", 
+            cur.execute("INSERT INTO articles (user_id, title, article_text) VALUES (%s, %s, %s);", 
                        (user_id, title, article_text))
         else:
             cur.execute("INSERT INTO articles (login_id, title, article_text) VALUES (?, ?, ?);", 
@@ -157,6 +158,7 @@ def create():
         return redirect('/lab5/list')
     
     except Exception as e:
+        print(f"Ошибка при создании статьи: {str(e)}")
         return render_template('lab5/create_article.html', error=f'Ошибка при создании статьи: {str(e)}')
 
 @lab5.route('/lab5/edit/<int:article_id>', methods=['GET', 'POST'])
@@ -169,9 +171,9 @@ def edit_article(article_id):
         conn, cur = db_connect()
         user_id = session.get('user_id')
 
-        # Проверяем, принадлежит ли статья пользователю
+        # Для PostgreSQL используем user_id, для SQLite используем login_id
         if current_app.config['DB_TYPE'] == 'postgres':
-            cur.execute("SELECT * FROM articles WHERE id = %s AND login_id = %s;", (article_id, user_id))
+            cur.execute("SELECT * FROM articles WHERE id = %s AND user_id = %s;", (article_id, user_id))
         else:
             cur.execute("SELECT * FROM articles WHERE id = ? AND login_id = ?;", (article_id, user_id))
         
@@ -227,9 +229,9 @@ def delete_article(article_id):
         conn, cur = db_connect()
         user_id = session.get('user_id')
 
-        # Проверяем, принадлежит ли статья пользователю
+        # Для PostgreSQL используем user_id, для SQLite используем login_id
         if current_app.config['DB_TYPE'] == 'postgres':
-            cur.execute("SELECT * FROM articles WHERE id = %s AND login_id = %s;", (article_id, user_id))
+            cur.execute("SELECT * FROM articles WHERE id = %s AND user_id = %s;", (article_id, user_id))
         else:
             cur.execute("SELECT * FROM articles WHERE id = ? AND login_id = ?;", (article_id, user_id))
         
@@ -264,8 +266,9 @@ def list_articles():
         conn, cur = db_connect()
         user_id = session.get('user_id')
 
+        # Для PostgreSQL используем user_id, для SQLite используем login_id
         if current_app.config['DB_TYPE'] == 'postgres':
-            cur.execute("SELECT * FROM articles WHERE login_id = %s ORDER BY id DESC;", (user_id,))
+            cur.execute("SELECT * FROM articles WHERE user_id = %s ORDER BY id DESC;", (user_id,))
         else:
             cur.execute("SELECT * FROM articles WHERE login_id = ? ORDER BY id DESC;", (user_id,))
         
@@ -275,4 +278,5 @@ def list_articles():
         return render_template('lab5/articles.html', articles=articles)
     
     except Exception as e:
+        print(f"Ошибка в list_articles: {str(e)}")
         return render_template('lab5/articles.html', articles=[], error=f'Ошибка при загрузке статей: {str(e)}')
