@@ -33,6 +33,20 @@ def db_close(conn, cur):
     cur.close()
     conn.close()
 
+def get_user_id(user):
+    """Универсальная функция для получения ID пользователя из разных типов объектов"""
+    if hasattr(user, 'get'):  # Для PostgreSQL RealDictCursor
+        return user.get('id')
+    else:  # Для SQLite Row
+        return user['id'] if user else None
+
+def get_article_field(article, field):
+    """Универсальная функция для получения поля статьи из разных типов объектов"""
+    if hasattr(article, 'get'):  # Для PostgreSQL RealDictCursor
+        return article.get(field)
+    else:  # Для SQLite Row
+        return article[field] if article else None
+
 @lab5.route('/lab5/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'GET':
@@ -100,12 +114,14 @@ def login():
             db_close(conn, cur)
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
-        if not check_password_hash(user['password'], password):
+        # Универсальный доступ к полю password
+        user_password = get_article_field(user, 'password')
+        if not check_password_hash(user_password, password):
             db_close(conn, cur)
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
         session['user_login'] = login
-        session['user_id'] = user['id']
+        session['user_id'] = get_user_id(user)
         
         db_close(conn, cur)
         return render_template('lab5/success_login.html', login=login)

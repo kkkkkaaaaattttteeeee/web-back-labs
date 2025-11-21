@@ -15,6 +15,7 @@
             <div class="empty-state">
                 <h2>У вас пока нет статей</h2>
                 <p>Создайте свою первую статью, чтобы она появилась здесь</p>
+                <a href="/lab5/create" class="btn btn-primary">Создать первую статью</a>
             </div>
         </div>
     {% else %}
@@ -22,21 +23,39 @@
             {% for article in articles %}
             <div class="article-card">
                 <div class="article-header">
-                    <h2 class="article-title">{{ article['title'] }}</h2>
+                    <h2 class="article-title">
+                        {% if article.get %}
+                            {{ article.get('title', 'Без названия') }}
+                        {% else %}
+                            {{ article['title'] if article['title'] else 'Без названия' }}
+                        {% endif %}
+                    </h2>
                     <div class="article-actions">
-                        <a href="/lab5/edit/{{ article['id'] }}" class="btn btn-edit">✏️ Редактировать</a>
-                        <a href="/lab5/delete/{{ article['id'] }}" 
+                        <a href="/lab5/edit/{{ article['id'] if article.get else article['id'] }}" class="btn btn-edit">✏️ Редактировать</a>
+                        <a href="/lab5/delete/{{ article['id'] if article.get else article['id'] }}" 
                            class="btn btn-delete" 
                            onclick="return confirm('Вы уверены, что хотите удалить эту статью?')">🗑️ Удалить</a>
                     </div>
                 </div>
                 <div class="article-content">
-                    <p>{{ article['article_text'] }}</p>
+                    <p>
+                        {% if article.get %}
+                            {{ article.get('article_text', '') }}
+                        {% else %}
+                            {{ article['article_text'] if article['article_text'] else '' }}
+                        {% endif %}
+                    </p>
                 </div>
                 <div class="article-footer">
-                    <small>ID: {{ article['id'] }}</small>
-                    {% if article.get('created_at') %}
-                    <small>Создано: {{ article['created_at'] }}</small>
+                    <small>ID: {{ article['id'] if article.get else article['id'] }}</small>
+                    {% if article.get('created_at') or article['created_at'] %}
+                    <small>Создано: 
+                        {% if article.get %}
+                            {{ article.get('created_at', '') }}
+                        {% else %}
+                            {{ article['created_at'] if article['created_at'] else '' }}
+                        {% endif %}
+                    </small>
                     {% endif %}
                 </div>
             </div>
@@ -46,8 +65,6 @@
 
     <div class="action-buttons">
         <a href="/lab5/create" class="btn btn-primary">Создать новую статью</a>
-    </div>
-    <div class="action-buttons">
         <a href="/lab5" class="btn btn-secondary">Назад к базе знаний</a>
     </div>
 </div>

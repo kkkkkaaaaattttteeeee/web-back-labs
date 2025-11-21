@@ -14,16 +14,24 @@
         <div class="form-group">
             <label for="title">Название статьи:</label>
             <input type="text" id="title" name="title" maxlength="50" 
-                   value="{{ article['title'] }}" 
+                   value="{% if article.get %}{{ article.get('title', '') }}{% else %}{{ article['title'] if article['title'] else '' }}{% endif %}" 
                    placeholder="Введите название статьи (максимум 50 символов)" required>
-            <div class="char-counter"><span id="title-counter">{{ article['title']|length }}</span>/50</div>
+            <div class="char-counter">
+                <span id="title-counter">
+                    {% if article.get %}
+                        {{ article.get('title', '')|length }}
+                    {% else %}
+                        {{ (article['title'] if article['title'] else '')|length }}
+                    {% endif %}
+                </span>/50
+            </div>
         </div>
 
         <div class="form-group">
             <label for="article_text">Текст статьи:</label>
             <textarea id="article_text" name="article_text" 
                       placeholder="Введите текст вашей статьи..." 
-                      rows="10" required>{{ article['article_text'] }}</textarea>
+                      rows="10" required>{% if article.get %}{{ article.get('article_text', '') }}{% else %}{{ article['article_text'] if article['article_text'] else '' }}{% endif %}</textarea>
         </div>
 
         <div class="form-actions">
