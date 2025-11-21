@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% include "lab5/style.html" %}
 
 {% block lab %}Лабораторная работа 5{% endblock %}
 
@@ -9,7 +10,15 @@
     <div class="user-info">
         {% if session.get('user_login') %}
             <div class="welcome-message">
-                <span class="user-greeting">👋 Добро пожаловать, <strong>{{ session['user_login'] }}</strong>!</span>
+                <span class="user-greeting">👋 Добро пожаловать, 
+                    <strong>
+                        {% if session.get('user_full_name') %}
+                            {{ session['user_full_name'] }} ({{ session['user_login'] }})
+                        {% else %}
+                            {{ session['user_login'] }}
+                        {% endif %}
+                    </strong>!
+                </span>
             </div>
         {% else %}
             <div class="anonymous-message">
@@ -20,7 +29,7 @@
 
     <div class="action-grid">
         <div class="action-card">
-            <h3>📚 Статьи</h3>
+            <h3>📚 Мои статьи</h3>
             <p>Просмотр и управление вашими статьями</p>
             <a href="/lab5/list" class="btn btn-primary">Перейти к статьям</a>
         </div>
@@ -31,7 +40,25 @@
             <a href="/lab5/create" class="btn btn-primary">Создать статью</a>
         </div>
 
+        <div class="action-card">
+            <h3>🌐 Публичные статьи</h3>
+            <p>Статьи всех пользователей</p>
+            <a href="/lab5/public" class="btn btn-primary">Смотреть публичные</a>
+        </div>
+
+        <div class="action-card">
+            <h3>👥 Пользователи</h3>
+            <p>Список всех пользователей</p>
+            <a href="/lab5/users" class="btn btn-primary">Смотреть список</a>
+        </div>
+
         {% if session.get('user_login') %}
+        <div class="action-card">
+            <h3>⚙️ Профиль</h3>
+            <p>Изменить имя и пароль</p>
+            <a href="/lab5/profile" class="btn btn-secondary">Настройки</a>
+        </div>
+
         <div class="action-card">
             <h3>🚪 Выход</h3>
             <p>Завершить текущую сессию</p>

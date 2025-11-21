@@ -6,7 +6,7 @@
 
 {% block main %}
 <div class="articles-container">
-    <h1>Мои статьи</h1>
+    <h1>Публичные статьи</h1>
 
     {% if error %}
         <div class="error-message">{{ error }}</div>
@@ -15,21 +15,22 @@
     {% if not articles %}
         <div class="no-articles">
             <div class="empty-state">
-                <h2>У вас пока нет статей</h2>
-                <p>Создайте свою первую статью, чтобы она появилась здесь</p>
-                <a href="/lab5/create" class="btn btn-primary">Создать первую статью</a>
+                <h2>Публичные статьи не найдены</h2>
+                <p>Пока никто не поделился публичными статьями</p>
+                {% if session.get('user_login') %}
+                <a href="/lab5/create" class="btn btn-primary">Создать публичную статью</a>
+                {% endif %}
             </div>
         </div>
     {% else %}
         <div class="articles-grid">
             {% for article in articles %}
-                {{ article_card(article, show_actions=true) }}
+                {{ article_card(article, show_actions=false) }}
             {% endfor %}
         </div>
     {% endif %}
 
     <div class="action-buttons">
-        <a href="/lab5/create" class="btn btn-primary">Создать новую статью</a>
         <a href="/lab5" class="btn btn-secondary">Назад к базе знаний</a>
     </div>
 </div>

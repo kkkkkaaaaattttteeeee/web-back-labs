@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% include "lab5/style.html" %}
 
 {% block lab %}Лабораторная работа 5{% endblock %}
 
@@ -18,6 +19,13 @@
                    placeholder="Придумайте логин (минимум 3 символа)" 
                    minlength="3" required>
             <small>Минимум 3 символа</small>
+        </div>
+
+        <div class="form-group">
+            <label for="full_name">Полное имя (необязательно):</label>
+            <input type="text" id="full_name" name="full_name" 
+                   value="{{ request.form.full_name }}" 
+                   placeholder="Введите ваше полное имя">
         </div>
 
         <div class="form-group">

@@ -1,0 +1,104 @@
+{% macro article_form(article=None) %}
+<div class="form-group">
+    <label for="title">Название статьи:</label>
+    <input type="text" id="title" name="title" maxlength="50" 
+           class="form-control-custom"
+           value="{{ article.title if article else request.form.title }}" 
+           placeholder="Введите название статьи (максимум 50 символов)" required>
+    <div class="char-counter">
+        <span id="title-counter">{{ (article.title if article else request.form.title or '')|length }}</span>/50
+    </div>
+</div>
+
+<div class="form-group">
+    <label for="article_text">Текст статьи:</label>
+    <textarea id="article_text" name="article_text" 
+              class="form-control-custom"
+              placeholder="Введите текст вашей статьи..." 
+              rows="10" required>{{ article.article_text if article else request.form.article_text }}</textarea>
+</div>
+
+<div class="form-group">
+    <label class="checkbox-custom">
+        Добавить в избранное
+        <input type="checkbox" name="is_favorite" value="1" 
+               {% if article and article.is_favorite %}checked{% endif %}>
+        <span class="checkmark"></span>
+    </label>
+    <small>⭐ Избранные статьи будут показываться первыми</small>
+</div>
+
+<div class="form-group">
+    <label class="checkbox-custom">
+        Сделать публичной
+        <input type="checkbox" name="is_public" value="1" 
+               {% if article and article.is_public %}checked{% endif %}>
+        <span class="checkmark"></span>
+    </label>
+    <small>🌐 Публичные статьи видны всем пользователям</small>
+</div>
+{% endmacro %}
+
+{% macro article_card(article, show_actions=True) %}
+<div class="article-card card-hover fade-in {% if article.is_favorite %}favorite{% endif %}">
+    {% if article.is_favorite %}
+    <div class="favorite-badge badge-premium">⭐ Избранное</div>
+    {% endif %}
+    {% if article.is_public %}
+    <div class="public-badge badge-new">🌐 Публичная</div>
+    {% endif %}
+    
+    <div class="article-header">
+        <h2 class="article-title text-shadow">{{ article.title or 'Без названия' }}</h2>
+        {% if show_actions %}
+        <div class="article-actions">
+            <a href="/lab5/edit/{{ article.id }}" class="btn btn-edit btn-glow">✏️ Редактировать</a>
+            <a href="/lab5/delete/{{ article.id }}" 
+               class="btn btn-delete btn-glow" 
+               onclick="return confirm('Вы уверены, что хотите удалить эту статью?')">🗑️ Удалить</a>
+        </div>
+        {% endif %}
+    </div>
+    <div class="article-content">
+        <p>{{ article.article_text or '' }}</p>
+    </div>
+    <div class="article-footer">
+        <small>ID: {{ article.id }}</small>
+        {% if article.created_at %}
+        <small>Создано: {{ article.created_at }}</small>
+        {% endif %}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro user_card(user) %}
+<div class="user-card card-hover fade-in">
+    <div class="user-avatar-container" style="position: relative;">
+        <div class="user-avatar">
+            {{ user.login[0]|upper }}
+        </div>
+        <div class="online-indicator"></div>
+    </div>
+    <div class="user-info">
+        <h3 class="user-login text-shadow">{{ user.login }}</h3>
+        {% if user.full_name %}
+        <p class="user-full-name">{{ user.full_name }}</p>
+        {% else %}
+        <p class="user-full-name empty">Имя не указано</p>
+        {% endif %}
+    </div>
+    <div class="user-id">
+        ID: {{ user.id }}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro empty_state(title, message, button_text=None, button_url=None) %}
+<div class="empty-state-enhanced fade-in">
+    <h2>{{ title }}</h2>
+    <p>{{ message }}</p>
+    {% if button_text and button_url %}
+    <a href="{{ button_url }}" class="btn btn-primary btn-glow">{{ button_text }}</a>
+    {% endif %}
+</div>
+{% endmacro %}

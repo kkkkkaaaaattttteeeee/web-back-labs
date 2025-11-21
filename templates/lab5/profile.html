@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% include "lab5/style.html" %}
+
+{% block lab %}Лабораторная работа 5{% endblock %}
+
+{% block main %}
+<div class="form-container">
+    <h1>Настройки профиля</h1>
+
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+    
+    <form method="post" class="profile-form">
+        <div class="form-section">
+            <h3>Личная информация</h3>
+            <div class="form-group">
+                <label for="full_name">Полное имя:</label>
+                <input type="text" id="full_name" name="full_name" 
+                       value="{{ session.get('user_full_name', '') }}" 
+                       placeholder="Введите ваше полное имя">
+            </div>
+        </div>
+
+        <div class="form-section">
+            <h3>Смена пароля</h3>
+            <div class="form-group">
+                <label for="current_password">Текущий пароль:</label>
+                <input type="password" id="current_password" name="current_password" 
+                       placeholder="Введите текущий пароль">
+            </div>
+
+            <div class="form-group">
+                <label for="new_password">Новый пароль:</label>
+                <input type="password" id="new_password" name="new_password" 
+                       placeholder="Введите новый пароль (минимум 4 символа)"
+                       minlength="4">
+                <small>Минимум 4 символа</small>
+            </div>
+
+            <div class="form-group">
+                <label for="confirm_password">Подтверждение пароля:</label>
+                <input type="password" id="confirm_password" name="confirm_password" 
+                       placeholder="Повторите новый пароль">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
+            <a href="/lab5" class="btn btn-secondary">Назад</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

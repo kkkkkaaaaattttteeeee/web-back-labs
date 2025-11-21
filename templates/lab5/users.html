@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% include "lab5/style.html" %}
+{% from "lab5/macros.html" import user_card %}
+
+{% block lab %}Лабораторная работа 5{% endblock %}
+
+{% block main %}
+<div class="users-container">
+    <h1>Список пользователей</h1>
+
+    {% if error %}
+        <div class="error-message">{{ error }}</div>
+    {% endif %}
+
+    {% if not users %}
+        <div class="empty-state">
+            <h2>Пользователи не найдены</h2>
+            <p>В системе пока нет зарегистрированных пользователей</p>
+        </div>
+    {% else %}
+        <div class="users-grid">
+            {% for user in users %}
+                {{ user_card(user) }}
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="action-buttons">
+        <a href="/lab5" class="btn btn-secondary">Назад к базе знаний</a>
+    </div>
+</div>
+{% endblock %}
