@@ -33,19 +33,16 @@ def db_close(conn, cur):
     cur.close()
     conn.close()
 
-def get_user_id(user):
-    """Универсальная функция для получения ID пользователя из разных типов объектов"""
-    if hasattr(user, 'get'):  # Для PostgreSQL RealDictCursor
-        return user.get('id')
-    else:  # Для SQLite Row
-        return user['id'] if user else None
-
-def get_article_field(article, field):
-    """Универсальная функция для получения поля статьи из разных типов объектов"""
-    if hasattr(article, 'get'):  # Для PostgreSQL RealDictCursor
-        return article.get(field)
-    else:  # Для SQLite Row
-        return article[field] if article else None
+def convert_to_dict(obj):
+    """Конвертирует объект строки в словарь для универсального доступа"""
+    if obj is None:
+        return None
+    if hasattr(obj, '_asdict'):  # Для namedtuple
+        return obj._asdict()
+    elif hasattr(obj, 'keys'):  # Для словарей и подобных
+        return dict(obj)
+    else:  # Для sqlite3.Row и других
+        return dict(obj)
 
 @lab5.route('/lab5/register', methods=['GET', 'POST'])
 def register():
@@ -108,20 +105,21 @@ def login():
             cur.execute("SELECT * FROM users WHERE login = %s;", (login,))
         else:
             cur.execute("SELECT * FROM users WHERE login = ?;", (login,))
-        user = cur.fetchone()
+        user_row = cur.fetchone()
 
-        if not user:
+        if not user_row:
             db_close(conn, cur)
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
-        # Универсальный доступ к полю password
-        user_password = get_article_field(user, 'password')
-        if not check_password_hash(user_password, password):
+        # Конвертируем в словарь для универсального доступа
+        user = convert_to_dict(user_row)
+        
+        if not check_password_hash(user['password'], password):
             db_close(conn, cur)
             return render_template('lab5/login.html', error='Логин и/или пароль неверны')
         
         session['user_login'] = login
-        session['user_id'] = get_user_id(user)
+        session['user_id'] = user['id']
         
         db_close(conn, cur)
         return render_template('lab5/success_login.html', login=login)
@@ -193,12 +191,15 @@ def edit_article(article_id):
         else:
             cur.execute("SELECT * FROM articles WHERE id = ? AND login_id = ?;", (article_id, user_id))
         
-        article = cur.fetchone()
+        article_row = cur.fetchone()
         
-        if not article:
+        if not article_row:
             db_close(conn, cur)
             flash('Статья не найдена или у вас нет прав для ее редактирования', 'error')
             return redirect('/lab5/list')
+
+        # Конвертируем в словарь для универсального доступа
+        article = convert_to_dict(article_row)
 
         if request.method == 'GET':
             db_close(conn, cur)
@@ -288,9 +289,12 @@ def list_articles():
         else:
             cur.execute("SELECT * FROM articles WHERE login_id = ? ORDER BY id DESC;", (user_id,))
         
-        articles = cur.fetchall()
-        db_close(conn, cur)
+        articles_rows = cur.fetchall()
         
+        # Конвертируем все строки в словари для универсального доступа в шаблоне
+        articles = [convert_to_dict(article) for article in articles_rows]
+        
+        db_close(conn, cur)
         return render_template('lab5/articles.html', articles=articles)
     
     except Exception as e:
