@@ -27,15 +27,31 @@ function getOfficeList() {
         for(let i = 0; i < office_list.length; i++) {
             const office = office_list[i];
             const li = document.createElement('li');
+            const currentUser = '{{ session.get("user_login", "") }}';
             
             if(office.tenant) {
                 li.innerHTML = `Офис ${office.number}: <span style="color: red;">Забронировано (${office.tenant})</span>`;
+                
+                // Если офис забронирован текущим пользователем, показываем кнопку "Освободить"
+                if(office.tenant === currentUser) {
+                    const cancelButton = document.createElement('button');
+                    cancelButton.innerText = 'Освободить';
+                    cancelButton.style.marginLeft = '10px';
+                    cancelButton.style.backgroundColor = '#dc3545';
+                    cancelButton.style.color = 'white';
+                    cancelButton.onclick = function() { 
+                        cancellation(office.number) 
+                    };
+                    li.appendChild(cancelButton);
+                }
             } else {
                 li.innerHTML = `Офис ${office.number}: <span style="color: green;">Свободен</span>`;
                 
                 const bookingButton = document.createElement('button');
                 bookingButton.innerText = 'Зарезервировать';
                 bookingButton.style.marginLeft = '10px';
+                bookingButton.style.backgroundColor = '#28a745';
+                bookingButton.style.color = 'white';
                 bookingButton.onclick = function() { 
                     booking(office.number) 
                 };
@@ -68,17 +84,54 @@ function booking(officeNumber) {
             switch(data.error.code) {
                 case 1:
                     alert('Вы не авторизованы, пожалуйста, авторизуйтесь');
-                    window.location.href = '/lab5/login?next=/lab6/'; // Передаем next
+                    window.location.href = '/lab5/login?next=/lab6/';
                     break;
                 case 2:
                     alert('Офис уже забронирован!');
-                    getOfficeList(); // Обновляем список
                     break;
                 default:
                     alert('Произошла ошибка: ' + data.error.message);
             }
         } else {
             getOfficeList(); // Успешное бронирование - обновляем список
+        }
+    });
+}
+
+function cancellation(officeNumber) {
+    const url = '/lab6/json-rpc-api/';
+    const json = {
+        'jsonrpc': '2.0',
+        'method': 'cancellation',
+        'params': officeNumber,
+        'id': Math.round(Math.random()*1000)
+    };
+    fetch(url, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(json)
+    })
+    .then(function(response) {
+        return response.json()
+    })
+    .then(function(data) {
+        if(data.error) {
+            switch(data.error.code) {
+                case 1:
+                    alert('Вы не авторизованы, пожалуйста, авторизуйтесь');
+                    window.location.href = '/lab5/login?next=/lab6/';
+                    break;
+                case 3:
+                    alert('Офис не был забронирован!');
+                    break;
+                case 4:
+                    alert('Вы не можете освободить чужой офис!');
+                    break;
+                default:
+                    alert('Произошла ошибка: ' + data.error.message);
+            }
+        } else {
+            getOfficeList(); // Успешное освобождение - обновляем список
         }
     });
 }
