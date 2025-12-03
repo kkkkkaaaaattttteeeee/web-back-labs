@@ -25,6 +25,11 @@
                    placeholder="Введите ваш пароль" required>
         </div>
 
+        <!-- Добавляем скрытое поле для next-параметра -->
+        {% if request.args.get('next') %}
+        <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+        {% endif %}
+
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Войти</button>
             <a href="/lab5/register" class="btn btn-secondary">Регистрация</a>

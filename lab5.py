@@ -82,22 +82,39 @@ def register():
             cur.execute("INSERT INTO users (login, password, full_name) VALUES (?, ?, ?)", 
                        (login, hashed_password, full_name))
         
+        # После успешной регистрации
+        # Авторизуем пользователя сразу же
+        session['user_login'] = login
+        # Получаем ID нового пользователя
+        if current_app.config['DB_TYPE'] == 'postgres':
+            cur.execute("SELECT id FROM users WHERE login = %s;", (login,))
+            user_id = cur.fetchone()['id']
+        else:
+            cur.execute("SELECT id FROM users WHERE login = ?;", (login,))
+            user_id = cur.fetchone()['id']
+        
+        session['user_id'] = user_id
+        session['user_full_name'] = full_name
+        
         db_close(conn, cur)
+        
+        # После регистрации остаемся в lab5 (не переходим на lab6)
         return render_template('lab5/success.html', login=login)
         
     except Exception as e:
         return render_template('lab5/register.html', error=f'Ошибка базы данных: {str(e)}')
 
-@lab5.route('/lab5/login', methods = ['GET', 'POST'])
+@lab5.route('/lab5/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'GET':
-        return render_template('lab5/login.html')
+        return render_template('lab5/login.html', next=request.args.get('next'))
     
     login = request.form.get('login')
     password = request.form.get('password')
+    next_page = request.form.get('next')  # Получаем next из формы
 
     if not login or not password:
-        return render_template('lab5/login.html', error="Заполните все поля")
+        return render_template('lab5/login.html', error="Заполните все поля", next=next_page)
     
     try:
         conn, cur = db_connect()
@@ -110,32 +127,44 @@ def login():
 
         if not user_row:
             db_close(conn, cur)
-            return render_template('lab5/login.html', error='Логин и/или пароль неверны')
+            return render_template('lab5/login.html', error='Логин и/или пароль неверны', next=next_page)
 
-# Конвертируем в словарь для универсального доступа
         user = convert_to_dict(user_row)
         
         if not check_password_hash(user['password'], password):
             db_close(conn, cur)
-            return render_template('lab5/login.html', error='Логин и/или пароль неверны')
+            return render_template('lab5/login.html', error='Логин и/или пароль неверны', next=next_page)
         
         session['user_login'] = login
         session['user_id'] = user['id']
         session['user_full_name'] = user.get('full_name', '')
         
         db_close(conn, cur)
-        return render_template('lab5/success_login.html', login=login)
+
+        # Логика перенаправления:
+        # 1. Если есть next_page (пришел с lab6) - перебрасываем туда
+        # 2. Если нет next_page (пришел из lab5) - остаемся в lab5
+        if next_page:
+            return redirect(next_page)
+        else:
+            return render_template('lab5/success_login.html', login=login)
 
     except Exception as e:
-        return render_template('lab5/login.html', error=f'Ошибка базы данных: {str(e)}')
+        return render_template('lab5/login.html', error=f'Ошибка базы данных: {str(e)}', next=next_page)
 
 @lab5.route('/lab5/logout')
 def logout():
+    # Получаем параметр next из запроса
+    next_page = request.args.get('next', '/lab5/')
+    
+    # Очищаем сессию
     session.pop('user_login', None)
     session.pop('user_id', None)
     session.pop('user_full_name', None)
     flash('Вы успешно вышли из системы', 'success')
-    return redirect('/lab5')
+    
+    # Перенаправляем на указанную страницу
+    return redirect(next_page)
 
 @lab5.route('/lab5/create', methods = ['GET', 'POST'])
 def create():
@@ -213,9 +242,7 @@ def edit_article(article_id):
         # Обработка формы редактирования
         title = request.form.get('title', '').strip()
         article_text = request.form.get('article_text', '').strip()
-        is_favorite = bool(request.form.
-
-get('is_favorite'))
+        is_favorite = bool(request.form.get('is_favorite'))
         is_public = bool(request.form.get('is_public'))
 
         if not title:
