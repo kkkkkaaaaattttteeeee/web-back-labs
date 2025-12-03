@@ -2,9 +2,10 @@ from flask import Blueprint, render_template, request, session
 
 lab6 = Blueprint('lab6', __name__)
 
+# Инициализируем офисы со стоимостью аренды
 offices = []
 for i in range(1, 11):
-    offices.append({"number": i, "tenant": ""})
+    offices.append({"number": i, "tenant": "", "price": 900 + i % 3})
 
 @lab6.route("/lab6/")
 def main():
@@ -54,10 +55,9 @@ def api():
                 }
     
     if data['method'] == 'cancellation':
-        office_number = data['params']  
+        office_number = data['params']
         for office in offices:
             if office['number'] == office_number:
-                # Проверка: офис должен быть арендован
                 if not office['tenant']:
                     return {
                         'jsonrpc': '2.0',
@@ -67,7 +67,6 @@ def api():
                         },
                         'id': id
                     }
-                # Проверка: офис должен быть арендован текущим пользователем
                 if office['tenant'] != login:
                     return {
                         'jsonrpc': '2.0',
@@ -77,14 +76,13 @@ def api():
                         },
                         'id': id
                     }
-                # Освобождаем офис
                 office['tenant'] = ""
                 return {
                     'jsonrpc': '2.0',
                     'result': 'success',
                     'id': id
                 }
-        
+    
     return {
         'jsonrpc': '2.0',
         'error': {

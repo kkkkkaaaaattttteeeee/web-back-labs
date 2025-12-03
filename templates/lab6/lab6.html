@@ -24,34 +24,57 @@ function getOfficeList() {
         const ul = document.getElementById('office-list');
         ul.innerHTML = ''; // Очищаем список
         
+        const currentUser = '{{ session.get("user_login", "") }}';
+        let totalCost = 0; // Общая стоимость арендованных офисов
+        
         for(let i = 0; i < office_list.length; i++) {
             const office = office_list[i];
             const li = document.createElement('li');
-            const currentUser = '{{ session.get("user_login", "") }}';
+            
+            // Форматируем цену с разделителями
+            const formattedPrice = office.price.toLocaleString('ru-RU');
             
             if(office.tenant) {
-                li.innerHTML = `Офис ${office.number}: <span style="color: red;">Забронировано (${office.tenant})</span>`;
+                li.innerHTML = `
+                    <strong>Офис ${office.number}:</strong> 
+                    <span style="color: red;">Забронировано (${office.tenant})</span> 
+                    <span style="margin-left: 10px;">💲 Стоимость: ${formattedPrice} руб./мес.</span>
+                `;
                 
-                // Если офис забронирован текущим пользователем, показываем кнопку "Освободить"
+                // Если офис забронирован текущим пользователем, добавляем в общую стоимость
                 if(office.tenant === currentUser) {
+                    totalCost += office.price;
+                    
                     const cancelButton = document.createElement('button');
                     cancelButton.innerText = 'Освободить';
                     cancelButton.style.marginLeft = '10px';
                     cancelButton.style.backgroundColor = '#dc3545';
                     cancelButton.style.color = 'white';
+                    cancelButton.style.border = 'none';
+                    cancelButton.style.padding = '5px 10px';
+                    cancelButton.style.borderRadius = '4px';
+                    cancelButton.style.cursor = 'pointer';
                     cancelButton.onclick = function() { 
                         cancellation(office.number) 
                     };
                     li.appendChild(cancelButton);
                 }
             } else {
-                li.innerHTML = `Офис ${office.number}: <span style="color: green;">Свободен</span>`;
+                li.innerHTML = `
+                    <strong>Офис ${office.number}:</strong> 
+                    <span style="color: green;">Свободен</span> 
+                    <span style="margin-left: 10px;">💲 Стоимость: ${formattedPrice} руб./мес.</span>
+                `;
                 
                 const bookingButton = document.createElement('button');
                 bookingButton.innerText = 'Зарезервировать';
                 bookingButton.style.marginLeft = '10px';
                 bookingButton.style.backgroundColor = '#28a745';
                 bookingButton.style.color = 'white';
+                bookingButton.style.border = 'none';
+                bookingButton.style.padding = '5px 10px';
+                bookingButton.style.borderRadius = '4px';
+                bookingButton.style.cursor = 'pointer';
                 bookingButton.onclick = function() { 
                     booking(office.number) 
                 };
@@ -60,7 +83,43 @@ function getOfficeList() {
             
             ul.appendChild(li);
         }
+        
+        // Обновляем блок с общей стоимостью
+        updateTotalCost(totalCost);
     })
+}
+
+function updateTotalCost(totalCost) {
+    const totalCostDiv = document.getElementById('total-cost');
+    if (totalCostDiv) {
+        const formattedTotal = totalCost.toLocaleString('ru-RU');
+        
+        if (totalCost > 0) {
+            totalCostDiv.innerHTML = `
+                <h3>💰 Стоимость вашей аренды:</h3>
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #007bff;">
+                    <p style="font-size: 1.2em; margin: 0;">
+                        <strong>Общая стоимость:</strong> <span style="color: #28a745; font-weight: bold;">${formattedTotal} руб./мес.</span>
+                    </p>
+                    <p style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                        *Сумма рассчитывается для офисов, забронированных вами
+                    </p>
+                </div>
+            `;
+        } else {
+            totalCostDiv.innerHTML = `
+                <h3>💰 Стоимость вашей аренды:</h3>
+                <div style="background-color: #f8f9fa; padding: 15px; border-radius: 8px; border-left: 4px solid #6c757d;">
+                    <p style="font-size: 1.2em; margin: 0;">
+                        <strong>Общая стоимость:</strong> <span style="color: #6c757d;">0 руб./мес.</span>
+                    </p>
+                    <p style="font-size: 0.9em; color: #6c757d; margin-top: 5px;">
+                        *У вас нет забронированных офисов
+                    </p>
+                </div>
+            `;
+        }
+    }
 }
 
 function booking(officeNumber) {
@@ -143,20 +202,33 @@ document.addEventListener('DOMContentLoaded', function() {
 {% endblock %}
 
 {% block main %}
-    <h1>Список кабинетов</h1>
+    <h1>📋 Список офисов для аренды</h1>
     
-    <div>
+    <div style="margin-bottom: 20px;">
         {% if session.get('user_login') %}
             <p>Вы вошли как: <strong>{{ session.user_login }}</strong></p>
             <p><a href="/lab5/logout?next=/lab6/">Выйти</a></p>
         {% else %}
-            <p style="color: red;">
-                Для бронирования необходимо 
-                <a href="/lab5/login?next=/lab6/">войти</a>
-            </p>
+            <div style="background-color: #fff3cd; padding: 10px; border-radius: 5px; border: 1px solid #ffeaa7;">
+                <p style="color: #856404; margin: 0;">
+                    ⚠️ Для бронирования офисов необходимо 
+                    <a href="/lab5/login?next=/lab6/" style="color: #007bff; font-weight: bold;">войти в систему</a>
+                </p>
+            </div>
         {% endif %}
     </div>
 
-    <h2>Состояние офисов:</h2>
-    <ul id="office-list"></ul>
+    <div style="background-color: #e9ecef; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+        <h3 style="margin-top: 0;">📊 Тарифы на аренду:</h3>
+        <ul style="margin-bottom: 0;">
+            <li>Офисы с номерами, дающими остаток 1 при делении на 3: <strong>901 руб./мес.</strong></li>
+            <li>Офисы с номерами, дающими остаток 2 при делении на 3: <strong>902 руб./мес.</strong></li>
+            <li>Офисы с номерами, делящиеся на 3 без остатка: <strong>900 руб./мес.</strong></li>
+        </ul>
+    </div>
+
+    <h2>🏢 Доступные офисы:</h2>
+    <ul id="office-list" style="list-style-type: none; padding: 0;"></ul>
+    
+    <div id="total-cost" style="margin-top: 30px;"></div>
 {% endblock %}
