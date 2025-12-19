@@ -1,0 +1,44 @@
+{% extends "rgz/base.html" %}
+{% block title %}Главная - Клиент{% endblock %}
+{% block content %}
+<h2>Добро пожаловать, {{ session.user_full_name }}!</h2>
+<p>Ваша роль: <strong>Клиент банка</strong></p>
+
+<div class="card" style="background: #f8f9fa; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <h3>Информация о вашем счете</h3>
+    <p><strong>Номер счета:</strong> {{ session.user_account }}</p>
+    <p><strong>Текущий баланс:</strong> <span id="balance" style="color: green; font-weight: bold; font-size: 1.2em;">Загрузка...</span> руб.</p>
+</div>
+
+<div class="quick-actions" style="margin-top: 30px;">
+    <h3>Быстрые действия</h3>
+    <div style="display: flex; gap: 20px; margin-top: 15px;">
+        <a href="/rgz/transfer" style="background: #28a745; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none;">
+            📤 Сделать перевод
+        </a>
+        <a href="/rgz/history" style="background: #007bff; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none;">
+            📋 История операций
+        </a>
+        <a href="/rgz/profile" style="background: #6c757d; color: white; padding: 12px 24px; border-radius: 5px; text-decoration: none;">
+            👤 Мой профиль
+        </a>
+    </div>
+</div>
+
+<script>
+    // Загружаем баланс
+    async function loadBalance() {
+        try {
+            const result = await apiCall('/rgz/api/user/current');
+            if (result.user && result.user.balance) {
+                document.getElementById('balance').textContent = result.user.balance.toFixed(2);
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки баланса:', error);
+            document.getElementById('balance').textContent = 'Ошибка';
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadBalance);
+</script>
+{% endblock %}

@@ -1,0 +1,105 @@
+{% extends "rgz/base.html" %}
+{% block title %}Создание пользователя{% endblock %}
+{% block content %}
+<h2>Создание нового пользователя</h2>
+
+<div style="max-width: 600px; margin: 30px auto; background: #f8f9fa; padding: 30px; border-radius: 10px;">
+    <form id="createUserForm">
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Тип пользователя:</label>
+            <select id="userRole" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;" required>
+                <option value="">Выберите тип</option>
+                <option value="client">Клиент</option>
+                <option value="manager">Менеджер</option>
+            </select>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Логин:</label>
+            <input type="text" id="login" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;" required>
+            <small style="color: #666;">Уникальный логин для входа в систему</small>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">Пароль:</label>
+            <input type="password" id="password" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;" required>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">ФИО:</label>
+            <input type="text" id="fullName" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;" required>
+        </div>
+        
+        <!-- Поля для клиента (появляются при выборе роли "client") -->
+        <div id="clientFields" style="display: none;">
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Телефон:</label>
+                <input type="text" id="phone" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;">
+                <small style="color: #666;">Для переводов по номеру телефона</small>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: bold;">Начальный баланс (руб.):</label>
+                <input type="number" id="balance" value="10000" step="0.01" min="0" 
+                       style="width:100%; padding:10px; border:1px solid #ccc; border-radius:4px;" required>
+                <small style="color: #666;">Сумма, которая будет зачислена на счет при создании</small>
+            </div>
+        </div>
+        
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 30px;">
+            <a href="/rgz/users" style="background: #6c757d; color: white; padding: 10px 20px; border-radius: 4px; text-decoration: none;">
+                Назад к списку
+            </a>
+            <button type="submit" style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+                Создать пользователя
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Показываем/скрываем поля для клиента
+    document.getElementById('userRole').addEventListener('change', function() {
+        const clientFields = document.getElementById('clientFields');
+        clientFields.style.display = this.value === 'client' ? 'block' : 'none';
+    });
+    
+    // Обработка формы создания
+    document.getElementById('createUserForm').onsubmit = async function(e) {
+        e.preventDefault();
+        
+        const userData = {
+            login: document.getElementById('login').value,
+            password: document.getElementById('password').value,
+            full_name: document.getElementById('fullName').value,
+            role: document.getElementById('userRole').value
+        };
+        
+        if (userData.role === 'client') {
+            userData.phone = document.getElementById('phone').value;
+            userData.balance = parseFloat(document.getElementById('balance').value);
+            
+            if (!userData.phone) {
+                alert('Для клиента обязателен телефон');
+                return;
+            }
+        }
+        
+        if (!userData.role) {
+            alert('Выберите тип пользователя');
+            return;
+        }
+        
+        try {
+            const result = await apiCall('/rgz/api/user', 'POST', userData);
+            
+            if (result.success) {
+                alert(`Пользователь "${userData.login}" успешно создан!`);
+                window.location.href = '/rgz/users';
+            }
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        }
+    };
+</script>
+{% endblock %}

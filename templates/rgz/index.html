@@ -1,0 +1,90 @@
+{% extends "rgz/base.html" %}
+{% block title %}Главная{% endblock %}
+{% block content %}
+<h2>Добро пожаловать, {{ session.user_full_name }}!</h2>
+<p>Ваша роль: {% if session.user_role == 'manager' %}Менеджер банка{% else %}Клиент{% endif %}</p>
+
+{% if session.user_role == 'client' %}
+<div id="balanceInfo">
+    <h3>Информация о счете</h3>
+    <p>Номер счета: <strong>{{ session.user_account }}</strong></p>
+    <p>Баланс: <strong id="balance">Загрузка...</strong> руб.</p>
+</div>
+
+<div id="recentTransactions" style="margin-top: 20px; display: none;">
+    <h3>Последние операции</h3>
+    <table id="transactionsTable" style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th style="border:1px solid #ccc; padding:8px;">Дата</th>
+                <th style="border:1px solid #ccc; padding:8px;">Описание</th>
+                <th style="border:1px solid #ccc; padding:8px;">Сумма</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+{% endif %}
+
+<script>
+    // Загружаем данные пользователя и баланс
+    async function loadUserData() {
+        try {
+            const result = await apiCall('/rgz/api/user/current');
+            
+            if (result.user) {
+                // Обновляем баланс для клиентов
+                if (result.user.role === 'client') {
+                    document.getElementById('balance').textContent = result.user.balance;
+                    
+                    // Загружаем последние транзакции
+                    await loadRecentTransactions();
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки данных:', error);
+            document.getElementById('balance').textContent = 'Ошибка загрузки';
+        }
+    }
+    
+    // Загружаем последние транзакции
+    async function loadRecentTransactions() {
+        try {
+            const result = await apiCall('/rgz/api/transactions');
+            
+            if (result.transactions && result.transactions.length > 0) {
+                const tbody = document.querySelector('#transactionsTable tbody');
+                const recent = result.transactions.slice(0, 5); // Последние 5
+                
+                tbody.innerHTML = recent.map(transaction => {
+                    const date = new Date(transaction.transaction_date).toLocaleString('ru-RU');
+                    const isOutgoing = transaction.from_account === '{{ session.user_account }}';
+                    const amount = parseFloat(transaction.amount);
+                    
+                    return `
+                        <tr>
+                            <td style="border:1px solid #ccc; padding:8px;">${date}</td>
+                            <td style="border:1px solid #ccc; padding:8px;">
+                                ${isOutgoing ? 
+                                    `Перевод на счет ${transaction.to_account}` : 
+                                    `Поступление от ${transaction.from_account || 'банка'}`}
+                                ${transaction.description ? `<br><small>${transaction.description}</small>` : ''}
+                            </td>
+                            <td style="border:1px solid #ccc; padding:8px; color:${isOutgoing ? 'red' : 'green'}">
+                                ${isOutgoing ? '-' : '+'}${amount.toFixed(2)} руб.
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                document.getElementById('recentTransactions').style.display = 'block';
+            }
+        } catch (error) {
+            console.error('Ошибка загрузки транзакций:', error);
+        }
+    }
+    
+    // Загружаем данные при загрузке страницы
+    document.addEventListener('DOMContentLoaded', loadUserData);
+</script>
+{% endblock %}

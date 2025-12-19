@@ -1,0 +1,154 @@
+{% extends "rgz/base.html" %}
+{% block title %}Перевод денег{% endblock %}
+{% block content %}
+<h2>Перевод денег</h2>
+
+<div style="max-width: 500px; margin: 20px 0;">
+    <form id="transferForm">
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                Номер счета или телефон получателя:
+            </label>
+            <input type="text" id="to_account" required 
+                   style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                Сумма (руб.):
+            </label>
+            <input type="number" id="amount" min="1" step="0.01" required 
+                   style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: bold;">
+                Описание перевода:
+            </label>
+            <input type="text" id="description" 
+                   style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+        </div>
+        
+        <button type="submit" 
+                style="background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer;">
+            Выполнить перевод
+        </button>
+    </form>
+</div>
+
+<!-- Результат перевода -->
+<div id="transferResult" style="display: none; margin-top: 30px; padding: 20px; background: #f0f8ff; border: 1px solid #007bff; border-radius: 5px;">
+    <h3 style="color: #28a745;">✅ Перевод выполнен успешно!</h3>
+    <div id="receiptDetails">
+        <!-- Здесь будет чек -->
+    </div>
+    <div style="margin-top: 20px;">
+        <button onclick="window.location.href='/rgz/'" 
+                style="background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+            Вернуться на главную
+        </button>
+    </div>
+</div>
+
+<script>
+    document.getElementById('transferForm').onsubmit = async function(e) {
+        e.preventDefault();
+        
+        const toAccount = document.getElementById('to_account').value.trim();
+        const amount = parseFloat(document.getElementById('amount').value);
+        const description = document.getElementById('description').value.trim();
+        
+        if (!toAccount) {
+            alert('Введите номер счета или телефон получателя');
+            return;
+        }
+        
+        if (!amount || amount <= 0) {
+            alert('Введите корректную сумму');
+            return;
+        }
+        
+        try {
+            const result = await apiCall('/rgz/api/transfer', 'POST', {
+                to_account: toAccount,
+                amount: amount,
+                description: description
+            });
+            
+            // Показываем чек
+            document.getElementById('transferForm').style.display = 'none';
+            document.getElementById('transferResult').style.display = 'block';
+            
+            const receiptHtml = `
+                <div style="background: white; padding: 20px; border: 1px dashed #ccc; border-radius: 5px; margin: 10px 0;">
+                    <h4 style="text-align: center; margin-bottom: 20px;">Банковский чек</h4>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Дата операции:</span>
+                        <span><strong>${new Date().toLocaleString('ru-RU')}</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Счет отправителя:</span>
+                        <span><strong>{{ session.user_account }}</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Счет получателя:</span>
+                        <span><strong>${result.details.to_account}</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                        <span>Получатель:</span>
+                        <span><strong>${result.details.to_name}</strong></span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
+                        <span>Сумма перевода:</span>
+                        <span style="color: red; font-weight: bold;">-${amount.toFixed(2)} руб.</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
+                        <span>Комиссия:</span>
+                        <span style="color: red; font-weight: bold;">0.00 руб.</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-top: 1px solid #ccc; padding-top: 10px;">
+                        <span>Описание:</span>
+                        <span>${description || 'Без описания'}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; border-top: 2px solid #000; padding-top: 10px;">
+                        <span>Остаток на счете:</span>
+                        <span style="color: green; font-weight: bold;">${result.new_balance.toFixed(2)} руб.</span>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('receiptDetails').innerHTML = receiptHtml;
+            
+        } catch (error) {
+            alert('Ошибка: ' + error.message);
+        }
+    };
+    
+    function printReceipt() {
+        const receiptContent = document.getElementById('receiptDetails').innerHTML;
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Чек банковского перевода</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; }
+                        @media print {
+                            button { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${receiptContent}
+                    <div style="margin-top: 20px; text-align: center;">
+                        <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                            Печать
+                        </button>
+                    </div>
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+    }
+</script>
+{% endblock %}

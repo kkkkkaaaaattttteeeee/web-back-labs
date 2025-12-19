@@ -1,0 +1,50 @@
+{% extends "rgz/base.html" %}
+{% block title %}Профиль{% endblock %}
+{% block content %}
+<h2>Профиль пользователя</h2>
+<div id="profileInfo" style="background: #f5f5f5; padding: 20px; border-radius: 5px; margin: 20px 0;">
+    <p>Загрузка данных профиля...</p>
+</div>
+
+<script>
+    async function loadProfile() {
+        try {
+            const result = await apiCall('/rgz/api/user/current');
+            
+            if (result.user) {
+                const user = result.user;
+                const profileDiv = document.getElementById('profileInfo');
+                
+                let html = `
+                    <h3>Личная информация</h3>
+                    <p><strong>ФИО:</strong> ${user.full_name}</p>
+                    <p><strong>Логин:</strong> ${user.login}</p>
+                    <p><strong>Роль:</strong> ${user.role === 'client' ? 'Клиент' : 'Менеджер банка'}</p>
+                `;
+                
+                if (user.role === 'client') {
+                    html += `
+                        <h3 style="margin-top: 20px;">Банковские реквизиты</h3>
+                        <p><strong>Номер счета:</strong> ${user.account_number || 'Не указан'}</p>
+                        <p><strong>Телефон:</strong> ${user.phone || 'Не указан'}</p>
+                        <p><strong>Текущий баланс:</strong> <span style="color: green; font-weight: bold;">${user.balance} руб.</span></p>
+                    `;
+                }
+                
+                html += `
+                    <h3 style="margin-top: 20px;">Информация об аккаунте</h3>
+                    <p><strong>Дата регистрации:</strong> ${new Date(user.created_at).toLocaleDateString('ru-RU')}</p>
+                `;
+                
+                profileDiv.innerHTML = html;
+            }
+        } catch (error) {
+            document.getElementById('profileInfo').innerHTML = `
+                <p style="color: red;">Ошибка загрузки профиля: ${error.message}</p>
+            `;
+        }
+    }
+    
+    document.addEventListener('DOMContentLoaded', loadProfile);
+</script>
+{% endblock %}

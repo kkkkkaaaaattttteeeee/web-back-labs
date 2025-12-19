@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Банк "Финансовый" - {% block title %}{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='rgz/css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="shortcut icon" type="image/x-icon" href="{{url_for('static', filename='favicon.ico') }}">
+</head>
+<body>
+    <!-- Навигация -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="bank-logo">
+                    <i class="fas fa-university"></i>
+                </div>
+                <div class="bank-name">Банк "Финансовый"</div>
+            </div>
+            
+            {% if session.user_id %}
+            <div class="nav-menu">
+                <a href="/rgz/" class="nav-link {% if request.path == '/rgz/' %}active{% endif %}">
+                    <i class="fas fa-home"></i> Главная
+                </a>
+                
+                {% if session.user_role == 'client' %}
+                <a href="/rgz/transfer" class="nav-link {% if request.path == '/rgz/transfer' %}active{% endif %}">
+                    <i class="fas fa-exchange-alt"></i> Перевод
+                </a>
+                {% endif %}
+                
+                <a href="/rgz/history" class="nav-link {% if request.path == '/rgz/history' %}active{% endif %}">
+                    <i class="fas fa-history"></i> История
+                </a>
+                
+                <a href="/rgz/profile" class="nav-link {% if request.path == '/rgz/profile' %}active{% endif %}">
+                    <i class="fas fa-user"></i> Профиль
+                </a>
+                
+                {% if session.user_role == 'manager' %}
+                <a href="/rgz/users" class="nav-link {% if request.path == '/rgz/users' %}active{% endif %}">
+                    <i class="fas fa-users"></i> Пользователи
+                </a>
+                <a href="/rgz/create_user" class="nav-link {% if request.path == '/rgz/create_user' %}active{% endif %}">
+                    <i class="fas fa-user-plus"></i> Создать
+                </a>
+                <a href="/rgz/statistics" class="nav-link {% if request.path == '/rgz/statistics' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i> Статистика
+                </a>
+                {% endif %}
+            </div>
+            
+            <div class="user-info">
+                <div class="user-badge">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ session.user_full_name }}</span>
+                    <span class="role-badge">
+                        {% if session.user_role == 'client' %}Клиент{% else %}Менеджер{% endif %}
+                    </span>
+                </div>
+                <a href="/rgz/logout" class="btn-logout">
+                    <i class="fas fa-sign-out-alt"></i> Выйти
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Основной контент -->
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-{{ 'check-circle' if category == 'success' else 'exclamation-circle' }}"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Футер - прижат к низу -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-info">
+                <p><i class="fas fa-university"></i> <strong>Банк "Финансовый"</strong> | Надежность и стабильность с 1995 года</p>
+                <p><i class="fas fa-user-graduate"></i> <strong>Разработчик:</strong> Обедина Екатерина Сергеевна</p>
+                <p><i class="fas fa-users"></i> <strong>Группа:</strong> ФБИ-33 | Курс: 3</p>
+                <p><i class="fas fa-graduation-cap"></i> <strong>ВУЗ:</strong> НГТУ, ФБ, WEB-программирование</p>
+                <p><i class="fas fa-shield-alt"></i> Лицензия ЦБ РФ № 1234 от 01.01.1995 | Все права защищены © 2025</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Базовые функции для работы с API
+        async function apiCall(endpoint, method = 'GET', data = null) {
+            const options = {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'same-origin'
+            };
+            
+            if (data) {
+                options.body = JSON.stringify(data);
+            }
+            
+            try {
+                const response = await fetch(endpoint, options);
+                const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.error || 'Ошибка сервера');
+                }
+                
+                return result;
+            } catch (error) {
+                console.error('API Error:', error);
+                throw error;
+            }
+        }
+        
+        // Форматирование чисел как денег
+        function formatMoney(amount) {
+            if (amount === undefined || amount === null) return '0.00 ₽';
+            return new Intl.NumberFormat('ru-RU', {
+                style: 'decimal',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            }).format(amount) + ' ₽';
+        }
+        
+        // Форматирование даты
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('ru-RU', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        // Показать уведомление
+        function showNotification(message, type = 'success') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                ${message}
+            `;
+            document.querySelector('.container').prepend(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000);
+        }
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

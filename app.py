@@ -1,4 +1,4 @@
-from flask import Flask, url_for, request, redirect, render_template, abort
+from flask import Flask, url_for, request, redirect, render_template, abort, session
 import datetime
 import os
 from lab1 import lab1
@@ -8,14 +8,12 @@ from lab4 import lab4
 from lab5 import lab5
 from lab6 import lab6
 from lab7 import lab7
-
+from rgz import rgz
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'секретно-секретный секрет')
-app.config['DB_TYPE'] = os.getenv('DB_TYPE', 'postgres')
 
-
+# Регистрируем все Blueprint
 app.register_blueprint(lab1)
 app.register_blueprint(lab2)
 app.register_blueprint(lab3)
@@ -23,11 +21,14 @@ app.register_blueprint(lab4)
 app.register_blueprint(lab5)
 app.register_blueprint(lab6)
 app.register_blueprint(lab7)
+app.register_blueprint(rgz)  # Добавляем РГЗ
 
+app.secret_key = 'your-secret-key-here-change-this-in-production'
 
 @app.route("/")
 @app.route("/index")
-def index():
+def main_index():
+    """Главная страница всех лабораторных работ"""
     return """ <!doctype html>
     <html> 
         <head>
@@ -46,6 +47,7 @@ def index():
             <li><a href="/lab5">Лабораторная работа 5</a></li>
             <li><a href="/lab6">Лабораторная работа 6</a></li>
             <li><a href="/lab7">Лабораторная работа 7</a></li>
+            <li><a href="/rgz/">РГЗ</a></li>
         </ul>
     </nav>
     <footer>
@@ -98,5 +100,6 @@ def not_found(err):
         # Fallback если что-то пошло не так
         app.logger.error(f'Error in 404 handler: {e}')
         return render_template('lab1/404.html'), 404
-    
-    
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5001)

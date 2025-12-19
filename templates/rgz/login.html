@@ -1,0 +1,38 @@
+{% extends "rgz/base.html" %}
+{% block title %}Вход{% endblock %}
+{% block content %}
+<h2>Вход в банковскую систему</h2>
+<form id="loginForm">
+    <div>
+        <label>Логин:</label>
+        <input type="text" id="login" required>
+    </div>
+    <div>
+        <label>Пароль:</label>
+        <input type="password" id="password" required>
+    </div>
+    <button type="submit">Войти</button>
+</form>
+
+<script>
+    document.getElementById('loginForm').onsubmit = async function(e) {
+        e.preventDefault();
+        
+        const login = document.getElementById('login').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const result = await apiCall('/rgz/api/login', 'POST', {
+                login: login,
+                password: password
+            });
+            
+            if (result.success) {
+                window.location.href = '/rgz/';
+            }
+        } catch (error) {
+            alert(error.message);
+        }
+    };
+</script>
+{% endblock %}

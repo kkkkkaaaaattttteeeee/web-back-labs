@@ -1,0 +1,249 @@
+{% extends "rgz/base.html" %}
+{% block title %}История операций{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-history"></i> История операций</h2>
+        </div>
+        
+        <div style="margin-bottom: 2rem; background: #f8f9fa; padding: 1.5rem; border-radius: 10px;">
+            <div style="display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap;">
+                <div>
+                    <label class="form-label" style="display: inline;">Тип операции:</label>
+                    <select id="filterType" class="form-control" style="display: inline; width: auto; margin-left: 0.5rem;">
+                        <option value="all">Все операции</option>
+                        <option value="incoming">Входящие</option>
+                        <option value="outgoing">Исходящие</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label" style="display: inline;">Период:</label>
+                    <input type="date" id="dateFrom" class="form-control" style="display: inline; width: auto; margin-left: 0.5rem;">
+                    <span style="margin: 0 0.5rem;">по</span>
+                    <input type="date" id="dateTo" class="form-control" style="display: inline; width: auto;">
+                </div>
+                <button onclick="loadTransactions()" class="btn btn-primary">
+                    <i class="fas fa-filter"></i> Применить фильтр
+                </button>
+                <button onclick="resetFilters()" class="btn btn-secondary">
+                    <i class="fas fa-redo"></i> Сбросить
+                </button>
+            </div>
+        </div>
+        
+        <div id="transactionsContainer">
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-spinner fa-spin fa-2x" style="color: #1a237e;"></i>
+                <p style="margin-top: 1rem;">Загрузка истории операций...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadTransactions() {
+        try {
+            const result = await apiCall('/rgz/api/transactions');
+            
+            if (result.transactions && result.transactions.length > 0) {
+                const filterType = document.getElementById('filterType').value;
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+                
+                let filtered = result.transactions;
+                
+                // Фильтрация по типу операции
+                const userAccount = '{{ session.user_account if session.user_role == "client" else "" }}';
+                if (filterType !== 'all' && userAccount) {
+                    filtered = filtered.filter(t => {
+                        if (filterType === 'incoming') {
+                            return t.to_account === userAccount;
+                        } else if (filterType === 'outgoing') {
+                            return t.from_account === userAccount;
+                        }
+                        return true;
+                    });
+                }
+                
+                // Фильтрация по дате
+                if (dateFrom) {
+                    filtered = filtered.filter(t => {
+                        if (!t.transaction_date) return false;
+                        const transDate = new Date(t.transaction_date).toISOString().split('T')[0];
+                        return transDate >= dateFrom;
+                    });
+                }
+                
+                if (dateTo) {
+                    filtered = filtered.filter(t => {
+                        if (!t.transaction_date) return false;
+                        const transDate = new Date(t.transaction_date).toISOString().split('T')[0];
+                        return transDate <= dateTo;
+                    });
+                }
+                
+                // Сортируем по дате (новые сверху)
+                filtered.sort((a, b) => new Date(b.transaction_date || 0) - new Date(a.transaction_date || 0));
+                
+                if (filtered.length === 0) {
+                    document.getElementById('transactionsContainer').innerHTML = `
+                        <div style="text-align: center; padding: 3rem; color: #666;">
+                            <i class="fas fa-search fa-3x" style="margin-bottom: 1rem;"></i>
+                            <h3>Операции не найдены</h3>
+                            <p>По выбранным фильтрам операции не найдены</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                let incomingTotal = 0;
+                let outgoingTotal = 0;
+                
+                const html = `
+                    <div style="overflow-x: auto;">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Дата и время</th>
+                                    <th>Операция</th>
+                                    <th>От кого</th>
+                                    <th>Кому</th>
+                                    <th>Сумма</th>
+                                    <th>Описание</th>
+                                    <th>Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${filtered.map(transaction => {
+                                    const isOutgoing = transaction.from_account === userAccount;
+                                    const amount = parseFloat(transaction.amount) || 0;
+                                    
+                                    if (isOutgoing) {
+                                        outgoingTotal += amount;
+                                    } else {
+                                        incomingTotal += amount;
+                                    }
+                                    
+                                    // Форматируем дату
+                                    let formattedDate = transaction.formatted_date;
+                                    if (!formattedDate && transaction.transaction_date) {
+                                        const date = new Date(transaction.transaction_date);
+                                        formattedDate = date.toLocaleDateString('ru-RU') + ' ' + 
+                                                       date.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'});
+                                    }
+                                    
+                                    return `
+                                        <tr style="${isOutgoing ? 'background: rgba(244, 67, 54, 0.05);' : 'background: rgba(76, 175, 80, 0.05);'}">
+                                            <td style="white-space: nowrap;">
+                                                <i class="fas fa-calendar-alt"></i> ${formattedDate || 'Дата не указана'}
+                                            </td>
+                                            <td>
+                                                <span style="display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; 
+                                                      background: ${isOutgoing ? '#f44336' : '#4caf50'}; color: white;">
+                                                    ${isOutgoing ? '📤 Исходящий' : '📥 Входящий'}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div><strong>${transaction.from_account || '—'}</strong></div>
+                                                <small style="color: #666;">${transaction.from_name || 'Банк'}</small>
+                                            </td>
+                                            <td>
+                                                <div><strong>${transaction.to_account}</strong></div>
+                                                <small style="color: #666;">${transaction.to_name || 'Банк'}</small>
+                                            </td>
+                                            <td style="font-weight: bold; font-size: 1.1em; 
+                                                color: ${isOutgoing ? '#f44336' : '#4caf50'}">
+                                                ${isOutgoing ? '−' : '+'}${formatMoney(amount)}
+                                            </td>
+                                            <td>${transaction.description || '<span style="color: #999;">—</span>'}</td>
+                                            <td>
+                                                <span class="status-success">
+                                                    <i class="fas fa-check-circle"></i> Выполнено
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 2rem; padding: 1.5rem; background: #f8f9fa; border-radius: 10px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center;">
+                            <div>
+                                <h4>Всего операций</h4>
+                                <div style="font-size: 2rem; font-weight: bold; color: #1a237e;">
+                                    ${filtered.length}
+                                </div>
+                            </div>
+                            <div>
+                                <h4>Общая сумма операций</h4>
+                                <div style="font-size: 2rem; font-weight: bold; color: #1a237e;">
+                                    ${formatMoney(incomingTotal + outgoingTotal)}
+                                </div>
+                            </div>
+                            <div style="color: #4caf50;">
+                                <h4><i class="fas fa-arrow-down"></i> Входящие</h4>
+                                <div style="font-size: 1.5rem; font-weight: bold;">
+                                    ${formatMoney(incomingTotal)}
+                                </div>
+                            </div>
+                            <div style="color: #f44336;">
+                                <h4><i class="fas fa-arrow-up"></i> Исходящие</h4>
+                                <div style="font-size: 1.5rem; font-weight: bold;">
+                                    ${formatMoney(outgoingTotal)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                document.getElementById('transactionsContainer').innerHTML = html;
+            } else {
+                document.getElementById('transactionsContainer').innerHTML = `
+                    <div style="text-align: center; padding: 3rem; color: #666;">
+                        <i class="fas fa-file-invoice-dollar fa-3x" style="margin-bottom: 1rem;"></i>
+                        <h3>История операций пуста</h3>
+                        <p>У вас еще не было операций по счету</p>
+                        {% if session.user_role == 'client' %}
+                        <a href="/rgz/transfer" class="btn btn-success" style="margin-top: 1rem;">
+                            <i class="fas fa-exchange-alt"></i> Сделать первый перевод
+                        </a>
+                        {% endif %}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            document.getElementById('transactionsContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Ошибка загрузки истории операций: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    function resetFilters() {
+        document.getElementById('filterType').value = 'all';
+        document.getElementById('dateFrom').value = '';
+        document.getElementById('dateTo').value = '';
+        loadTransactions();
+    }
+    
+    // Устанавливаем даты по умолчанию (последние 30 дней)
+    function setDefaultDates() {
+        const today = new Date();
+        const monthAgo = new Date();
+        monthAgo.setDate(today.getDate() - 30);
+        
+        document.getElementById('dateFrom').value = monthAgo.toISOString().split('T')[0];
+        document.getElementById('dateTo').value = today.toISOString().split('T')[0];
+    }
+    
+    document.addEventListener('DOMContentLoaded', () => {
+        setDefaultDates();
+        loadTransactions();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,254 @@
+{% extends "rgz/base.html" %}
+{% block title %}Управление пользователями{% endblock %}
+{% block content %}
+<div class="fade-in">
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-users"></i> Управление пользователями</h2>
+            <a href="/rgz/create_user" class="btn btn-success">
+                <i class="fas fa-user-plus"></i> Создать нового пользователя
+            </a>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <div class="form-group" style="max-width: 400px;">
+                <input type="text" id="searchInput" class="form-control" 
+                       placeholder="🔍 Поиск по имени, логину или телефону...">
+            </div>
+        </div>
+        
+        <div id="usersTableContainer">
+            <div style="text-align: center; padding: 3rem;">
+                <i class="fas fa-spinner fa-spin fa-2x" style="color: #1a237e;"></i>
+                <p style="margin-top: 1rem;">Загрузка пользователей...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    async function loadUsers() {
+        try {
+            const result = await apiCall('/rgz/api/users');
+            if (result.users) {
+                renderUsersTable(result.users);
+            }
+        } catch (error) {
+            document.getElementById('usersTableContainer').innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Ошибка загрузки пользователей: ${error.message}
+                </div>
+            `;
+        }
+    }
+    
+    function renderUsersTable(users) {
+        if (users.length === 0) {
+            document.getElementById('usersTableContainer').innerHTML = `
+                <div style="text-align: center; padding: 3rem; color: #666;">
+                    <i class="fas fa-user-slash fa-3x" style="margin-bottom: 1rem;"></i>
+                    <h3>Пользователи не найдены</h3>
+                    <p>Создайте первого пользователя, нажав кнопку выше</p>
+                </div>
+            `;
+            return;
+        }
+        
+        const tableHtml = `
+            <div style="overflow-x: auto;">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Логин</th>
+                            <th>ФИО</th>
+                            <th>Роль</th>
+                            <th>Телефон</th>
+                            <th>Номер счета</th>
+                            <th>Баланс</th>
+                            <th>Дата регистрации</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${users.map(user => `
+                            <tr>
+                                <td><strong>${user.id}</strong></td>
+                                <td>${user.login}</td>
+                                <td>${user.full_name}</td>
+                                <td>
+                                    <span style="display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; 
+                                          background: ${user.role === 'client' ? '#4caf50' : '#1a237e'}; color: white;">
+                                        ${user.role === 'client' ? '👤 Клиент' : '👔 Менеджер'}
+                                    </span>
+                                </td>
+                                <td>${user.phone || '<span style="color: #999;">—</span>'}</td>
+                                <td><code>${user.account_number || '<span style="color: #999;">—</span>'}</code></td>
+                                <td>
+                                    ${user.balance !== undefined && user.balance !== null ? 
+                                        `<span style="font-weight: bold; color: ${user.balance >= 0 ? '#4caf50' : '#f44336'}">
+                                            ${formatMoney(user.balance)}
+                                        </span>` : 
+                                        '<span style="color: #999;">—</span>'}
+                                </td>
+                                <td>${user.created_date || '<span style="color: #999;">—</span>'}</td>
+                                <td>
+                                    <div style="display: flex; gap: 0.5rem;">
+                                        <button onclick="editUser(${user.id})" 
+                                                class="btn btn-warning" 
+                                                style="padding: 0.4rem 0.8rem; font-size: 0.9rem;">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button onclick="deleteUser(${user.id})" 
+                                                class="btn btn-danger" 
+                                                style="padding: 0.4rem 0.8rem; font-size: 0.9rem;"
+                                                ${user.id === {{ session.user_id|default(0) }} ? 'disabled' : ''}>
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+            <div style="margin-top: 1rem; color: #666; text-align: center;">
+                Всего пользователей: ${users.length}
+            </div>
+        `;
+        
+        document.getElementById('usersTableContainer').innerHTML = tableHtml;
+    }
+    
+    async function editUser(userId) {
+        try {
+            const result = await apiCall('/rgz/api/users');
+            const user = result.users.find(u => u.id === userId);
+            
+            if (!user) {
+                alert('Пользователь не найден');
+                return;
+            }
+            
+            const modalHtml = `
+                <div id="editModal" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); 
+                     display: flex; justify-content: center; align-items: center; z-index: 1000; padding: 1rem;">
+                    <div style="background: white; padding: 2rem; border-radius: 15px; width: 500px; max-width: 90%; max-height: 90vh; overflow-y: auto;">
+                        <h3 style="color: #1a237e; margin-bottom: 1.5rem;">
+                            <i class="fas fa-user-edit"></i> Редактирование пользователя
+                        </h3>
+                        <form id="editUserForm">
+                            <input type="hidden" id="editUserId" value="${user.id}">
+                            
+                            <div class="form-group">
+                                <label class="form-label">ФИО:</label>
+                                <input type="text" id="editFullName" value="${user.full_name}" 
+                                       class="form-control" required>
+                            </div>
+                            
+                            ${user.role === 'client' ? `
+                                <div class="form-group">
+                                    <label class="form-label">Телефон:</label>
+                                    <input type="text" id="editPhone" value="${user.phone || ''}" 
+                                           class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Баланс (руб.):</label>
+                                    <input type="number" id="editBalance" value="${user.balance || 0}" step="0.01" min="0"
+                                           class="form-control" required>
+                                </div>
+                            ` : ''}
+                            
+                            <div class="form-group">
+                                <label class="form-label">Новый пароль (оставьте пустым, если не менять):</label>
+                                <input type="password" id="editNewPassword" class="form-control">
+                                <small style="color: #666;">Минимум 6 символов</small>
+                            </div>
+                            
+                            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Сохранить
+                                </button>
+                                <button type="button" onclick="closeEditModal()" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Отмена
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            document.getElementById('editUserForm').onsubmit = async function(e) {
+                e.preventDefault();
+                
+                const updateData = {
+                    full_name: document.getElementById('editFullName').value
+                };
+                
+                if (user.role === 'client') {
+                    updateData.phone = document.getElementById('editPhone').value;
+                    updateData.balance = parseFloat(document.getElementById('editBalance').value);
+                }
+                
+                const newPassword = document.getElementById('editNewPassword').value;
+                if (newPassword) {
+                    if (newPassword.length < 6) {
+                        alert('Пароль должен содержать минимум 6 символов');
+                        return;
+                    }
+                    updateData.new_password = newPassword;
+                }
+                
+                try {
+                    const result = await apiCall(`/rgz/api/user/${user.id}`, 'PUT', updateData);
+                    alert('✅ Пользователь успешно обновлен');
+                    closeEditModal();
+                    loadUsers();
+                } catch (error) {
+                    alert('❌ Ошибка: ' + error.message);
+                }
+            };
+            
+        } catch (error) {
+            alert('❌ Ошибка: ' + error.message);
+        }
+    }
+    
+    function closeEditModal() {
+        const modal = document.getElementById('editModal');
+        if (modal) {
+            modal.remove();
+        }
+    }
+    
+    async function deleteUser(userId) {
+        if (!confirm('Вы уверены, что хотите удалить этого пользователя?\nЭто действие нельзя отменить.')) {
+            return;
+        }
+        
+        try {
+            await apiCall(`/rgz/api/user/${userId}`, 'DELETE');
+            alert('✅ Пользователь успешно удален');
+            loadUsers();
+        } catch (error) {
+            alert('❌ Ошибка: ' + error.message);
+        }
+    }
+    
+    // Поиск пользователей
+    document.getElementById('searchInput')?.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const rows = document.querySelectorAll('#usersTableContainer tbody tr');
+        
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+    });
+    
+    document.addEventListener('DOMContentLoaded', loadUsers);
+</script>
+{% endblock %}
