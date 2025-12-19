@@ -17,51 +17,51 @@
     position: absolute;
     padding: 20px;
 }
+.error-message {
+    color: red;
+}
 </style>
 {% endblock %}
 
 {% block main %}
     <h1>Список фильмов</h1>
-    <table>
+    <table border="1">
         <thead>
             <tr>
-                <th colspan="2">Название</th>
+                <th>Название (англ.)</th>
+                <th>Название (рус.)</th>
                 <th>Год</th>
                 <th>Действие</th>
             </tr>
-    </thead>
-    <tbody id="film-list"></tbody>
+        </thead>
+        <tbody id="film-list"></tbody>
     </table>
-
-    <script>
-        fillFilmlist();
-    </script>
 
     <div>
         <button onclick="addFilm()">Добавить фильм</button>
     </div>
 
     <div class="modal">
-    <input type="hidden" id="id">
-    <label>
-        Название фильма на русском:
-        <input type="text" id="title.ru">
-    </label><br>
-    <label>
-        Название фильма на оригинальном языке
-        <i>(если фильм русский, то оставьте пустым):</i>
-        <input type="text" id="title">
-    </label><br>
-    <label>
-        Год выпуска:
-        <input type="number" id="year">
-    </label><br>
-    <label>
-        Описание:
-        <textarea id="description"></textarea>
-    </label><br>
-    <button onclick="sendFilm()">OK</button>
-    <button onclick="cancel()">Отмена</button>
+        <input type="hidden" id="id">
+        <label>
+            Название фильма на русском:
+            <input type="text" id="title.ru">
+        </label><br>
+        <label>
+            Название фильма на оригинальном языке
+            <i>(если фильм русский, то оставьте пустым):</i>
+            <input type="text" id="title">
+        </label><br>
+        <label>
+            Год выпуска:
+            <input type="number" id="year">
+        </label><br>
+        <label>
+            Описание:
+            <textarea id="description"></textarea>
+            <div id="description.error" class="error-message"></div>
+        </label><br>
+        <button onclick="sendFilm()">OK</button>
+        <button onclick="cancel()">Отмена</button>
     </div>
-
 {% endblock %}
