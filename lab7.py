@@ -27,6 +27,35 @@ films = [
     }
 ]
 
+def validate_film_data(film):
+    """Валидация данных фильма"""
+    errors = {}
+    
+    # Проверка описания
+    if not film.get('description') or film['description'].strip() == '':
+        errors['description'] = 'Заполните описание'
+    
+    # Проверка русского названия
+    if not film.get('title_ru') or film['title_ru'].strip() == '':
+        errors['title_ru'] = 'Введите название на русском'
+    
+    # Проверка года
+    if not film.get('year'):
+        errors['year'] = 'Введите год выпуска'
+    else:
+        try:
+            year = int(film['year'])
+            if year < 1888 or year > 2024:  # 1888 - год первого фильма
+                errors['year'] = 'Введите корректный год (1888-2024)'
+        except ValueError:
+            errors['year'] = 'Год должен быть числом'
+    
+    # Если оригинальное название пустое, но русское задано, используем русское
+    if (not film.get('title') or film['title'].strip() == '') and film.get('title_ru'):
+        film['title'] = film['title_ru']
+    
+    return errors, film
+
 @lab7.route('/lab7/rest-api/films/', methods=['GET'])
 def get_films():
     return jsonify(films)
@@ -51,20 +80,22 @@ def put_film(id):
     
     film = request.get_json()
     
-    # Проверка описания
-    if not film.get('description') or film['description'].strip() == '':
-        return jsonify({"description": "Заполните описание"}), 400
+    # Валидация данных
+    errors, validated_film = validate_film_data(film)
+    if errors:
+        return jsonify(errors), 400
     
-    films[id] = film
+    films[id] = validated_film
     return jsonify(films[id]), 200
 
 @lab7.route('/lab7/rest-api/films/', methods=['POST'])
 def add_film():
     film = request.get_json()
     
-    # Проверка описания
-    if not film.get('description') or film['description'].strip() == '':
-        return jsonify({"description": "Заполните описание"}), 400
+    # Валидация данных
+    errors, validated_film = validate_film_data(film)
+    if errors:
+        return jsonify(errors), 400
     
-    films.append(film)
+    films.append(validated_film)
     return jsonify({"id": len(films) - 1}), 201

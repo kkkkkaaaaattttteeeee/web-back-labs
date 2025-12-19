@@ -7,61 +7,215 @@
 <style>
 .modal {
     display: none;
-    z-index: 100;
-    box-shadow: 3px 3px 5px black;
-    background: white;
-    width: 400px;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    background: linear-gradient(to bottom, #ffffff, #f9f9f9);
+    width: 450px;
     left: 50%;
-    top: 220px;
-    margin-left: -200px;
-    position: absolute;
-    padding: 20px;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    position: fixed;
+    padding: 25px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
 }
+
+.modal label {
+    display: block;
+    margin-top: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.modal input[type="text"],
+.modal input[type="number"],
+.modal textarea {
+    width: 100%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+    font-family: inherit;
+}
+
+.modal textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.modal button {
+    margin-top: 20px;
+    margin-right: 10px;
+    padding: 10px 20px;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal button:hover {
+    background: #45a049;
+}
+
+.modal button:nth-child(2) {
+    background: #f44336;
+}
+
+.modal button:nth-child(2):hover {
+    background: #d32f2f;
+}
+
 .error-message {
-    color: red;
+    color: #f44336;
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table thead {
+    background: linear-gradient(to right, #2c3e50, #4a6491);
+    color: white;
+}
+
+table th, table td {
+    padding: 12px 15px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+table tbody tr {
+    transition: background-color 0.3s;
+}
+
+table tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+}
+
+.original-title {
+    font-style: italic;
+    color: #666;
+    font-size: 0.9em;
+}
+
+button {
+    padding: 8px 15px;
+    margin: 5px;
+    background: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background 0.3s;
+    font-size: 14px;
+}
+
+button:hover {
+    background: #2980b9;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button:nth-child(1) {
+    background: #3498db;
+}
+
+button:nth-child(2) {
+    background: #e74c3c;
+}
+
+button:nth-child(1):hover {
+    background: #2980b9;
+}
+
+button:nth-child(2):hover {
+    background: #c0392b;
+}
+
+h1 {
+    color: #2c3e50;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+    text-align: center;
+}
+
+#add-film-btn {
+    background: #27ae60;
+    padding: 12px 25px;
+    font-size: 16px;
+    margin: 20px 0;
+}
+
+#add-film-btn:hover {
+    background: #219653;
 }
 </style>
 {% endblock %}
 
 {% block main %}
-    <h1>Список фильмов</h1>
-    <table border="1">
+    <h1>🎬 Список фильмов</h1>
+    
+    <table>
         <thead>
             <tr>
-                <th>Название (англ.)</th>
-                <th>Название (рус.)</th>
+                <th>Название (русское)</th>
+                <th>Оригинальное название</th>
                 <th>Год</th>
-                <th>Действие</th>
+                <th>Действия</th>
             </tr>
         </thead>
         <tbody id="film-list"></tbody>
     </table>
 
     <div>
-        <button onclick="addFilm()">Добавить фильм</button>
+        <button onclick="addFilm()">➕ Добавить фильм</button>
     </div>
 
     <div class="modal">
         <input type="hidden" id="id">
+        
         <label>
             Название фильма на русском:
             <input type="text" id="title.ru">
+            <div id="title_ru.error" class="error-message"></div>
         </label><br>
+        
         <label>
             Название фильма на оригинальном языке
-            <i>(если фильм русский, то оставьте пустым):</i>
+            <i>(если фильм русский, можно оставить пустым):</i>
             <input type="text" id="title">
+            <div id="title.error" class="error-message"></div>
         </label><br>
+        
         <label>
             Год выпуска:
-            <input type="number" id="year">
+            <input type="number" id="year" min="1888" max="2024">
+            <div id="year.error" class="error-message"></div>
         </label><br>
+        
         <label>
             Описание:
             <textarea id="description"></textarea>
             <div id="description.error" class="error-message"></div>
         </label><br>
-        <button onclick="sendFilm()">OK</button>
-        <button onclick="cancel()">Отмена</button>
+        
+        <button onclick="sendFilm()">✅ Сохранить</button>
+        <button onclick="cancel()">❌ Отмена</button>
     </div>
 {% endblock %}
