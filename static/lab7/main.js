@@ -30,6 +30,9 @@ function fillFilmlist() {
 
                 let delButton = document.createElement('button');
                 delButton.innerText = 'удалить';
+                delButton.onclick = function() {
+                    deleteFilm(i, films[i].title_ru);
+                };
 
                 tdActions.append(editButton);
                 tdActions.append(delButton);
@@ -44,5 +47,22 @@ function fillFilmlist() {
         })
         .catch(function (error) {
             console.error('Ошибка при загрузке фильмов:', error);
+        });
+}
+
+function deleteFilm(id, title) {
+    if(!confirm(`Вы точно хотите удалить фильм "${title}"?`))
+        return;
+
+    fetch(`/lab7/rest-api/films/${id}`, {method: 'DELETE'})
+        .then(function (response) {
+            if (response.status === 204) {
+                fillFilmList();
+            } else {
+                console.error('Ошибка при удалении фильма');
+            }
+        })
+        .catch(function (error) {
+            console.error('Ошибка:', error);
         });
 }
