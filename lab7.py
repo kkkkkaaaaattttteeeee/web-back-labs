@@ -56,7 +56,18 @@ def get_film(id):
     return films[id]
 
 @lab7.route('/lab7/rest-api/films/<int:id>', methods=['GET'])
-def get_film(id):
+def get_error(id):
     if id < 0 or id >= len(films):
         return jsonify({"error": "Film not found"}), 404
     return films[id]
+
+from flask import jsonify
+
+@lab7.route('/lab7/rest-api/films/<int:id>', methods=['DELETE'])
+def del_film(id):
+    # Проверка, что id в допустимом диапазоне
+    if id < 0 or id >= len(films):
+        return jsonify({"error": "Film not found"}), 404
+    # Удаление фильма из списка
+    del films[id]
+    return '', 204
