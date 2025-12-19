@@ -71,3 +71,21 @@ def del_film(id):
     # Удаление фильма из списка
     del films[id]
     return '', 204
+
+from flask import request, jsonify
+
+@lab7.route('/lab7/rest-api/films/<int:id>', methods=['PUT'])
+def put_film(id):
+    # Проверяем, существует ли фильм с таким id
+    if id < 0 or id >= len(films):
+        return jsonify({"error": "Film not found"}), 404
+    
+    # Получаем данные из запроса
+    film = request.get_json()
+    
+    # Заменяем фильм по указанному индексу
+    films[id] = film
+    
+    # Возвращаем обновленный фильм с кодом 200
+    return jsonify(films[id]), 200
+
