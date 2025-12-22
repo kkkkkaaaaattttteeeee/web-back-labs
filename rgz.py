@@ -110,97 +110,86 @@ def client_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-# API Routes
 @rgz.route('/api/login', methods=['POST'])
-def api_login():
-    """API для авторизации с автоматическим хешированием паролей"""
+def api_simple_login():
+    """Упрощенная авторизация для отладки"""
     data = request.get_json()
+    
+    if not data:
+        return jsonify({'error': 'Отсутствуют данные JSON'}), 400
+    
     login = data.get('login')
     password = data.get('password')
     
     if not login or not password:
         return jsonify({'error': 'Логин и пароль обязательны'}), 400
     
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
-        cur.execute("SELECT * FROM rgz_users WHERE login = %s;", (login,))
+        
+        # Используем параметризованный запрос для PostgreSQL
+        cur.execute("SELECT * FROM rgz_users WHERE login = %s", (login,))
         user_row = cur.fetchone()
         
         if not user_row:
             db_close(conn, cur)
-            return jsonify({'error': 'Неверный логин или пароль'}), 401
+            return jsonify({'error': 'Пользователь не найден'}), 401
         
         user = convert_to_dict(user_row)
         stored_password = user.get('password', '')
         
-        login_success = False
+        # Проверяем пароль в зависимости от его формата
+        password_correct = False
         
-        # Проверяем разные форматы пароля
-        if stored_password == password:
-            # Пароль в открытом виде - хешируем и обновляем
-            hashed_password = generate_password_hash(password)
-            cur.execute("UPDATE rgz_users SET password = %s WHERE id = %s;", 
-                       (hashed_password, user['id']))
-            conn.commit()
-            login_success = True
-            print(f"Пароль для пользователя {login} был захеширован и сохранен")
-        
-        # Если пароль уже захеширован (форматы werkzeug)
-        elif stored_password.startswith('pbkdf2:sha256:') or stored_password.startswith('pbkdf2:'):
-            # Проверяем хеш
-            if check_password_hash(stored_password, password):
-                login_success = True
-            else:
-                login_success = False
-        
-        # Другие форматы хешей (например, bcrypt - начинается с $2)
-        elif stored_password.startswith('$2'):
-            if check_password_hash(stored_password, password):
-                login_success = True
-            else:
-                login_success = False
-        
+        # Если пароль хранится как хеш scrypt (начинается с scrypt:)
+        if stored_password and stored_password.startswith('scrypt:'):
+            try:
+                password_correct = check_password_hash(stored_password, password)
+            except Exception as hash_error:
+                print(f"Hash check error: {hash_error}")
+                password_correct = False
         else:
-            # Если неизвестный формат, сравниваем как строки
-            if stored_password == password:
-                login_success = True
-                # Хешируем для безопасности
-                hashed_password = generate_password_hash(password)
-                cur.execute("UPDATE rgz_users SET password = %s WHERE id = %s;", 
-                           (hashed_password, user['id']))
-                conn.commit()
-            else:
-                login_success = False
+            # Если пароль хранится в открытом виде (временная мера)
+            password_correct = (stored_password == password)
         
-        if not login_success:
+        if password_correct:
+            # Успешный вход
+            session['user_id'] = user['id']
+            session['user_login'] = user['login']
+            session['user_role'] = user['role']
+            session['user_full_name'] = user['full_name']
+            
+            if user['role'] == 'client':
+                session['user_account'] = user.get('account_number', '')
+                session['user_balance'] = float(user.get('balance', 0.0))
+            
+            # Удаляем пароль из ответа
+            if 'password' in user:
+                del user['password']
+            
             db_close(conn, cur)
-            return jsonify({'error': 'Неверный логин или пароль'}), 401
-        
-        # Сохраняем в сессии
-        session['user_id'] = user['id']
-        session['user_login'] = user['login']
-        session['user_role'] = user['role']
-        session['user_full_name'] = user['full_name']
-        if user['role'] == 'client':
-            session['user_account'] = user.get('account_number', '')
-        
-        # Убираем пароль из ответа
-        if 'password' in user:
-            del user['password']
-        
-        db_close(conn, cur)
-        
-        return jsonify({
-            'success': True,
-            'user': user
-        })
-        
+            return jsonify({
+                'success': True,
+                'user': user
+            })
+        else:
+            db_close(conn, cur)
+            return jsonify({'error': 'Неверный пароль'}), 401
+            
     except Exception as e:
         print(f"Login error: {e}")
         import traceback
-        print(traceback.format_exc())
+        traceback.print_exc()
         return jsonify({'error': 'Внутренняя ошибка сервера'}), 500
-
+    finally:
+        if conn or cur:
+            try:
+                db_close(conn, cur)
+            except:
+                pass
+            
 @rgz.route('/api/logout', methods=['POST'])
 def api_logout():
     """API для выхода"""
@@ -220,6 +209,8 @@ def api_transfer():
     if amount <= 0:
         return jsonify({'error': 'Сумма должна быть положительной'}), 400
     
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         
@@ -227,7 +218,11 @@ def api_transfer():
         cur.execute("SELECT * FROM rgz_users WHERE id = %s;", (session['user_id'],))
         sender = convert_to_dict(cur.fetchone())
         
-        if sender['balance'] < amount:
+        if not sender:
+            db_close(conn, cur)
+            return jsonify({'error': 'Отправитель не найден'}), 404
+        
+        if sender.get('balance', 0) < amount:
             db_close(conn, cur)
             return jsonify({'error': 'Недостаточно средств'}), 400
         
@@ -292,12 +287,16 @@ def api_transfer():
         
     except Exception as e:
         print(f"Transfer error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/transactions')
 @login_required
 def api_transactions():
     """API для получения истории транзакций"""
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         
@@ -351,6 +350,8 @@ def api_transactions():
         
     except Exception as e:
         print(f"Transactions error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/users')
@@ -358,6 +359,8 @@ def api_transactions():
 @manager_required
 def api_users():
     """API для получения списка пользователей (только для менеджеров)"""
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         cur.execute("""
@@ -386,6 +389,8 @@ def api_users():
         
     except Exception as e:
         print(f"Users error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/user', methods=['POST'])
@@ -400,6 +405,8 @@ def api_create_user():
         if not data.get(field):
             return jsonify({'error': f'Поле {field} обязательно'}), 400
     
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         
@@ -410,12 +417,13 @@ def api_create_user():
             return jsonify({'error': 'Пользователь с таким логином уже существует'}), 400
         
         # Всегда хешируем пароль при создании
-        hashed_password = generate_password_hash(data['password'])
+        hashed_password = generate_password_hash(data['password'], method='scrypt')
         
         if data['role'] == 'client':
             # Для клиента нужен номер счета и начальный баланс
             phone = data.get('phone', '')
             if not phone:
+                db_close(conn, cur)
                 return jsonify({'error': 'Для клиента обязателен телефон'}), 400
             
             # Генерируем уникальный номер счета
@@ -467,6 +475,8 @@ def api_create_user():
         
     except Exception as e:
         print(f"Create user error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/user/<int:user_id>', methods=['PUT'])
@@ -479,6 +489,8 @@ def api_update_user(user_id):
     
     data = request.get_json()
     
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         
@@ -513,7 +525,7 @@ def api_update_user(user_id):
         
         # Если нужно обновить пароль
         if data.get('new_password'):
-            hashed_password = generate_password_hash(data['new_password'])
+            hashed_password = generate_password_hash(data['new_password'], method='scrypt')
             cur.execute("""
                 UPDATE rgz_users 
                 SET password = %s 
@@ -525,6 +537,8 @@ def api_update_user(user_id):
         
     except Exception as e:
         print(f"Update user error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/user/<int:user_id>', methods=['DELETE'])
@@ -535,6 +549,8 @@ def api_delete_user(user_id):
     if user_id == session.get('user_id'):
         return jsonify({'error': 'Нельзя удалить свой аккаунт'}), 400
     
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         
@@ -561,12 +577,16 @@ def api_delete_user(user_id):
         
     except Exception as e:
         print(f"Delete user error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/user/current')
 @login_required
 def api_current_user():
     """API для получения данных текущего пользователя"""
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         cur.execute("SELECT * FROM rgz_users WHERE id = %s;", (session['user_id'],))
@@ -587,6 +607,8 @@ def api_current_user():
         
     except Exception as e:
         print(f"Current user error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 @rgz.route('/api/statistics')
@@ -594,6 +616,8 @@ def api_current_user():
 @manager_required
 def api_statistics():
     """API для получения статистики (только для менеджеров)"""
+    conn = None
+    cur = None
     try:
         conn, cur = db_connect()
         
@@ -676,6 +700,8 @@ def api_statistics():
         
     except Exception as e:
         print(f"Statistics error: {e}")
+        if conn or cur:
+            db_close(conn, cur)
         return jsonify({'error': str(e)}), 500
 
 # HTML Routes
