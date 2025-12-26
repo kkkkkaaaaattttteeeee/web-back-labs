@@ -1,11 +1,13 @@
 from flask import Blueprint, request, render_template, redirect, session, current_app, flash, jsonify
 from werkzeug.security import check_password_hash, generate_password_hash
-import psycopg2
-from psycopg2.extras import RealDictCursor
+import os
+import sqlite3
 import datetime
 import random
 import json
 from decimal import Decimal
+from functools import wraps
+import pathlib
 
 rgz = Blueprint('rgz', __name__, template_folder='templates/rgz', url_prefix='/rgz', static_folder='static/rgz')
 
@@ -20,30 +22,90 @@ class CustomJSONEncoder(json.JSONEncoder):
             return obj.strftime('%Y-%m-%d')
         return super(CustomJSONEncoder, self).default(obj)
 
+def get_db_path():
+    """Определяет путь к базе данных в зависимости от среды"""
+    if 'PYTHONANYWHERE_DOMAIN' in os.environ:
+        # На PythonAnywhere
+        return '/home/obedinaekaterina/web-back-labs/rgz_database.db'
+    else:
+        # Локально
+        base_dir = pathlib.Path(__file__).parent.parent
+        return base_dir / 'rgz_database.db'
+
 def db_connect():
-    """Подключение к базе данных"""
+    """Универсальное подключение к базе данных"""
     try:
-        conn = psycopg2.connect(
-            host='127.0.0.1',
-            database='bank_db',
-            user='obedina_ekaterina_knowledge_base',
-            password='123',
-            client_encoding='UTF8'
-        )
-        cur = conn.cursor(cursor_factory=RealDictCursor)
-        return conn, cur
+        db_type = current_app.config.get('DB_TYPE', 'postgres')
+        
+        if db_type == 'postgres':
+            # PostgreSQL подключение
+            import psycopg2
+            from psycopg2.extras import RealDictCursor
+            
+            conn = psycopg2.connect(
+                host='127.0.0.1',
+                database='bank_db',
+                user='obedina_ekaterina_knowledge_base',
+                password='123',
+                client_encoding='UTF8'
+            )
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            return conn, cur
+        else:
+            # SQLite подключение
+            db_path = get_db_path()
+            conn = sqlite3.connect(str(db_path))
+            
+            # Включаем поддержку внешних ключей
+            conn.execute("PRAGMA foreign_keys = ON")
+            
+            # Настраиваем возврат строк в виде словаря
+            def dict_factory(cursor, row):
+                d = {}
+                for idx, col in enumerate(cursor.description):
+                    d[col[0]] = row[idx]
+                return d
+            conn.row_factory = dict_factory
+            
+            cur = conn.cursor()
+            return conn, cur
+            
     except Exception as e:
         print(f"Database connection error: {e}")
         raise
 
 def db_close(conn, cur):
-    """Закрытие соединения с базой данных"""
+    """Универсальное закрытие соединения с базой данных"""
     try:
-        conn.commit()
-        cur.close()
-        conn.close()
+        if conn:
+            conn.commit()
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
     except Exception as e:
         print(f"Database close error: {e}")
+
+def execute_query(cur, sql, params=None):
+    """Универсальное выполнение SQL-запросов для разных СУБД"""
+    if params is None:
+        params = ()
+    
+    db_type = current_app.config.get('DB_TYPE', 'postgres')
+    
+    try:
+        # Для SQLite преобразуем boolean значения
+        if db_type == 'sqlite':
+            params = list(params)
+            for i, param in enumerate(params):
+                if isinstance(param, bool):
+                    params[i] = 1 if param else 0
+        
+        cur.execute(sql, params)
+        return cur
+    except Exception as e:
+        print(f"Query execution error: {e}")
+        raise
 
 def safe_convert_value(value):
     """Безопасное преобразование значения для JSON"""
@@ -73,14 +135,18 @@ def convert_to_dict(row):
         return None
     
     result = {}
-    for key in row.keys():
-        result[key] = safe_convert_value(row[key])
+    if hasattr(row, 'keys'):  # Для словарей и RealDictCursor
+        for key in row.keys():
+            result[key] = safe_convert_value(row[key])
+    elif isinstance(row, (tuple, list)):  # Для обычных кортежей
+        # Этот случай маловероятен, но на всякий случай
+        for i, value in enumerate(row):
+            result[f'col_{i}'] = safe_convert_value(value)
     
     return result
 
 def login_required(f):
     """Декоратор для проверки авторизации"""
-    from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_id' not in session:
@@ -90,7 +156,6 @@ def login_required(f):
 
 def manager_required(f):
     """Декоратор для проверки прав менеджера"""
-    from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_role' not in session or session['user_role'] != 'manager':
@@ -101,7 +166,6 @@ def manager_required(f):
 
 def client_required(f):
     """Декоратор для проверки прав клиента"""
-    from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'user_role' not in session or session['user_role'] != 'client':
@@ -109,6 +173,72 @@ def client_required(f):
             return redirect('/rgz/')
         return f(*args, **kwargs)
     return decorated_function
+
+def get_param_style():
+    """Возвращает стиль параметров для текущей СУБД"""
+    db_type = current_app.config.get('DB_TYPE', 'postgres')
+    return '%s' if db_type == 'postgres' else '?'
+
+def init_sqlite_db():
+    """Инициализация базы данных SQLite"""
+    try:
+        db_path = get_db_path()
+        
+        # Проверяем, существует ли директория
+        os.makedirs(os.path.dirname(str(db_path)), exist_ok=True)
+        
+        conn = sqlite3.connect(str(db_path))
+        cur = conn.cursor()
+        
+        # Создаем таблицы, если их нет
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS rgz_users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                login VARCHAR(50) UNIQUE NOT NULL,
+                password VARCHAR(200) NOT NULL,
+                full_name VARCHAR(100) NOT NULL,
+                phone VARCHAR(20),
+                account_number VARCHAR(20) UNIQUE,
+                balance DECIMAL(15,2) DEFAULT 0.00,
+                role VARCHAR(10) NOT NULL CHECK (role IN ('client', 'manager')),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        cur.execute('''
+            CREATE TABLE IF NOT EXISTS rgz_transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                from_account VARCHAR(20),
+                to_account VARCHAR(20) NOT NULL,
+                amount DECIMAL(15,2) NOT NULL,
+                transaction_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                description VARCHAR(200)
+            )
+        ''')
+        
+        # Создаем индексы
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_rgz_transactions_from_account ON rgz_transactions(from_account)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_rgz_transactions_to_account ON rgz_transactions(to_account)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_rgz_users_account_number ON rgz_users(account_number)')
+        cur.execute('CREATE INDEX IF NOT EXISTS idx_rgz_users_phone ON rgz_users(phone)')
+        
+        # Проверяем, есть ли администратор
+        cur.execute("SELECT COUNT(*) FROM rgz_users WHERE role = 'manager'")
+        if cur.fetchone()[0] == 0:
+            # Создаем администратора по умолчанию
+            admin_password = generate_password_hash('admin123', method='scrypt')
+            cur.execute('''
+                INSERT INTO rgz_users (login, password, full_name, role) 
+                VALUES (?, ?, ?, ?)
+            ''', ('admin', admin_password, 'Администратор', 'manager'))
+        
+        conn.commit()
+        conn.close()
+        print(f"База данных SQLite инициализирована: {db_path}")
+        return True
+    except Exception as e:
+        print(f"Ошибка инициализации SQLite базы данных: {e}")
+        return False
 
 @rgz.route('/api/login', methods=['POST'])
 def api_simple_login():
@@ -129,8 +259,9 @@ def api_simple_login():
     try:
         conn, cur = db_connect()
         
-        # Используем параметризованный запрос для PostgreSQL
-        cur.execute("SELECT * FROM rgz_users WHERE login = %s", (login,))
+        param_style = get_param_style()
+        query = f"SELECT * FROM rgz_users WHERE login = {param_style}"
+        execute_query(cur, query, (login,))
         user_row = cur.fetchone()
         
         if not user_row:
@@ -143,8 +274,8 @@ def api_simple_login():
         # Проверяем пароль в зависимости от его формата
         password_correct = False
         
-        # Если пароль хранится как хеш scrypt (начинается с scrypt:)
-        if stored_password and stored_password.startswith('scrypt:'):
+        # Если пароль хранится как хеш
+        if stored_password and (stored_password.startswith('scrypt:') or stored_password.startswith('pbkdf2:')):
             try:
                 password_correct = check_password_hash(stored_password, password)
             except Exception as hash_error:
@@ -189,7 +320,7 @@ def api_simple_login():
                 db_close(conn, cur)
             except:
                 pass
-            
+
 @rgz.route('/api/logout', methods=['POST'])
 def api_logout():
     """API для выхода"""
@@ -213,25 +344,28 @@ def api_transfer():
     cur = None
     try:
         conn, cur = db_connect()
+        param_style = get_param_style()
         
         # Получаем данные отправителя
-        cur.execute("SELECT * FROM rgz_users WHERE id = %s;", (session['user_id'],))
+        query = f"SELECT * FROM rgz_users WHERE id = {param_style}"
+        execute_query(cur, query, (session['user_id'],))
         sender = convert_to_dict(cur.fetchone())
         
         if not sender:
             db_close(conn, cur)
             return jsonify({'error': 'Отправитель не найден'}), 404
         
-        if sender.get('balance', 0) < amount:
+        if float(sender.get('balance', 0)) < amount:
             db_close(conn, cur)
             return jsonify({'error': 'Недостаточно средств'}), 400
         
         # Ищем получателя по номеру счета или телефону
-        cur.execute("""
+        query = f"""
             SELECT * FROM rgz_users 
-            WHERE (account_number = %s OR phone = %s) 
-            AND role = 'client';
-        """, (to_account, to_account))
+            WHERE (account_number = {param_style} OR phone = {param_style}) 
+            AND role = 'client'
+        """
+        execute_query(cur, query, (to_account, to_account))
         receiver = cur.fetchone()
         
         if not receiver:
@@ -245,29 +379,44 @@ def api_transfer():
             return jsonify({'error': 'Нельзя перевести себе'}), 400
         
         # Выполняем перевод
-        cur.execute("""
-            UPDATE rgz_users SET balance = balance - %s 
-            WHERE id = %s;
-        """, (amount, sender['id']))
+        query = f"UPDATE rgz_users SET balance = balance - {param_style} WHERE id = {param_style}"
+        execute_query(cur, query, (amount, sender['id']))
         
-        cur.execute("""
-            UPDATE rgz_users SET balance = balance + %s 
-            WHERE id = %s;
-        """, (amount, receiver['id']))
+        query = f"UPDATE rgz_users SET balance = balance + {param_style} WHERE id = {param_style}"
+        execute_query(cur, query, (amount, receiver['id']))
         
-        # Записываем транзакцию и получаем её ID
-        cur.execute("""
-            INSERT INTO rgz_transactions 
-            (from_account, to_account, amount, description) 
-            VALUES (%s, %s, %s, %s)
-            RETURNING id;
-        """, (sender.get('account_number'), receiver['account_number'], amount, description))
+        # Записываем транзакцию
+        db_type = current_app.config.get('DB_TYPE', 'postgres')
+        if db_type == 'postgres':
+            query = """
+                INSERT INTO rgz_transactions 
+                (from_account, to_account, amount, description) 
+                VALUES (%s, %s, %s, %s)
+                RETURNING id
+            """
+        else:
+            query = """
+                INSERT INTO rgz_transactions 
+                (from_account, to_account, amount, description) 
+                VALUES (?, ?, ?, ?)
+            """
         
-        transaction_id = cur.fetchone()['id']
+        execute_query(cur, query, (sender.get('account_number'), receiver['account_number'], amount, description))
+        
+        # Получаем ID транзакции
+        if db_type == 'postgres':
+            transaction_id = cur.fetchone()['id']
+        else:
+            transaction_id = cur.lastrowid
         
         # Получаем обновленный баланс отправителя
-        cur.execute("SELECT balance FROM rgz_users WHERE id = %s;", (sender['id'],))
+        query = f"SELECT balance FROM rgz_users WHERE id = {param_style}"
+        execute_query(cur, query, (sender['id'],))
         new_balance = cur.fetchone()['balance']
+        
+        # Обновляем баланс в сессии
+        if session.get('user_role') == 'client' and session.get('user_id') == sender['id']:
+            session['user_balance'] = float(new_balance)
         
         db_close(conn, cur)
         
@@ -299,29 +448,32 @@ def api_transactions():
     cur = None
     try:
         conn, cur = db_connect()
+        param_style = get_param_style()
         
         if session.get('user_role') == 'client':
             user_account = session.get('user_account')
-            cur.execute("""
+            query = f"""
                 SELECT t.*, 
                        u1.full_name as from_name,
                        u2.full_name as to_name
                 FROM rgz_transactions t
                 LEFT JOIN rgz_users u1 ON t.from_account = u1.account_number
                 LEFT JOIN rgz_users u2 ON t.to_account = u2.account_number
-                WHERE t.from_account = %s OR t.to_account = %s 
-                ORDER BY t.transaction_date DESC;
-            """, (user_account, user_account))
+                WHERE t.from_account = {param_style} OR t.to_account = {param_style} 
+                ORDER BY t.transaction_date DESC
+            """
+            execute_query(cur, query, (user_account, user_account))
         else:
-            cur.execute("""
+            query = """
                 SELECT t.*, 
                        u1.full_name as from_name,
                        u2.full_name as to_name
                 FROM rgz_transactions t
                 LEFT JOIN rgz_users u1 ON t.from_account = u1.account_number
                 LEFT JOIN rgz_users u2 ON t.to_account = u2.account_number
-                ORDER BY t.transaction_date DESC;
-            """)
+                ORDER BY t.transaction_date DESC
+            """
+            execute_query(cur, query)
         
         transactions = []
         for row in cur.fetchall():
@@ -330,7 +482,6 @@ def api_transactions():
             if transaction.get('transaction_date'):
                 try:
                     if isinstance(transaction['transaction_date'], str):
-                        # Если дата в строковом формате
                         for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d %H:%M:%S.%f']:
                             try:
                                 dt = datetime.datetime.strptime(transaction['transaction_date'], fmt)
@@ -339,7 +490,6 @@ def api_transactions():
                             except:
                                 continue
                     else:
-                        # Если это datetime объект
                         transaction['formatted_date'] = transaction['transaction_date'].strftime('%d.%m.%Y %H:%M')
                 except:
                     transaction['formatted_date'] = str(transaction.get('transaction_date', ''))
@@ -363,18 +513,31 @@ def api_users():
     cur = None
     try:
         conn, cur = db_connect()
-        cur.execute("""
-            SELECT id, login, full_name, phone, account_number, 
-                   COALESCE(balance, 0) as balance, role, 
-                   DATE(created_at) as created_date
-            FROM rgz_users 
-            ORDER BY role, full_name;
-        """)
+        
+        # Для SQLite нужно использовать COALESCE немного иначе
+        db_type = current_app.config.get('DB_TYPE', 'postgres')
+        if db_type == 'postgres':
+            query = """
+                SELECT id, login, full_name, phone, account_number, 
+                       COALESCE(balance, 0) as balance, role, 
+                       DATE(created_at) as created_date
+                FROM rgz_users 
+                ORDER BY role, full_name
+            """
+        else:
+            query = """
+                SELECT id, login, full_name, phone, account_number, 
+                       IFNULL(balance, 0) as balance, role, 
+                       DATE(created_at) as created_date
+                FROM rgz_users 
+                ORDER BY role, full_name
+            """
+        
+        execute_query(cur, query)
         
         users = []
         for row in cur.fetchall():
             user = convert_to_dict(row)
-            # Гарантируем что balance это float
             if user.get('balance') is not None:
                 try:
                     user['balance'] = float(user['balance'])
@@ -409,9 +572,11 @@ def api_create_user():
     cur = None
     try:
         conn, cur = db_connect()
+        param_style = get_param_style()
         
         # Проверяем уникальность логина
-        cur.execute("SELECT id FROM rgz_users WHERE login = %s;", (data['login'],))
+        query = f"SELECT id FROM rgz_users WHERE login = {param_style}"
+        execute_query(cur, query, (data['login'],))
         if cur.fetchone():
             db_close(conn, cur)
             return jsonify({'error': 'Пользователь с таким логином уже существует'}), 400
@@ -419,8 +584,9 @@ def api_create_user():
         # Всегда хешируем пароль при создании
         hashed_password = generate_password_hash(data['password'], method='scrypt')
         
+        db_type = current_app.config.get('DB_TYPE', 'postgres')
+        
         if data['role'] == 'client':
-            # Для клиента нужен номер счета и начальный баланс
             phone = data.get('phone', '')
             if not phone:
                 db_close(conn, cur)
@@ -430,18 +596,28 @@ def api_create_user():
             account_number = f'40817810{random.randint(1000000000, 9999999999)}'
             
             # Проверяем уникальность номера счета
-            cur.execute("SELECT id FROM rgz_users WHERE account_number = %s;", (account_number,))
+            query = f"SELECT id FROM rgz_users WHERE account_number = {param_style}"
+            execute_query(cur, query, (account_number,))
             if cur.fetchone():
                 account_number = f'40817810{random.randint(1000000000, 9999999999)}'
             
             balance = float(data.get('balance', 10000.00))
             
-            cur.execute("""
-                INSERT INTO rgz_users 
-                (login, password, full_name, phone, account_number, balance, role) 
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING id;
-            """, (
+            if db_type == 'postgres':
+                query = """
+                    INSERT INTO rgz_users 
+                    (login, password, full_name, phone, account_number, balance, role) 
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
+                    RETURNING id
+                """
+            else:
+                query = """
+                    INSERT INTO rgz_users 
+                    (login, password, full_name, phone, account_number, balance, role) 
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """
+            
+            execute_query(cur, query, (
                 data['login'],
                 hashed_password,
                 data['full_name'],
@@ -452,19 +628,31 @@ def api_create_user():
             ))
         else:
             # Для менеджера
-            cur.execute("""
-                INSERT INTO rgz_users 
-                (login, password, full_name, role) 
-                VALUES (%s, %s, %s, %s)
-                RETURNING id;
-            """, (
+            if db_type == 'postgres':
+                query = """
+                    INSERT INTO rgz_users 
+                    (login, password, full_name, role) 
+                    VALUES (%s, %s, %s, %s)
+                    RETURNING id
+                """
+            else:
+                query = """
+                    INSERT INTO rgz_users 
+                    (login, password, full_name, role) 
+                    VALUES (?, ?, ?, ?)
+                """
+            
+            execute_query(cur, query, (
                 data['login'],
                 hashed_password,
                 data['full_name'],
                 'manager'
             ))
         
-        new_user_id = cur.fetchone()['id']
+        if db_type == 'postgres':
+            new_user_id = cur.fetchone()['id']
+        else:
+            new_user_id = cur.lastrowid
         
         db_close(conn, cur)
         return jsonify({
@@ -493,9 +681,11 @@ def api_update_user(user_id):
     cur = None
     try:
         conn, cur = db_connect()
+        param_style = get_param_style()
         
         # Получаем текущие данные пользователя
-        cur.execute("SELECT * FROM rgz_users WHERE id = %s;", (user_id,))
+        query = f"SELECT * FROM rgz_users WHERE id = {param_style}"
+        execute_query(cur, query, (user_id,))
         user_row = cur.fetchone()
         
         if not user_row:
@@ -510,27 +700,22 @@ def api_update_user(user_id):
             phone = data.get('phone', user.get('phone', ''))
             balance = float(data.get('balance', user['balance']))
             
-            cur.execute("""
+            query = f"""
                 UPDATE rgz_users 
-                SET full_name = %s, phone = %s, balance = %s 
-                WHERE id = %s;
-            """, (full_name, phone, balance, user_id))
+                SET full_name = {param_style}, phone = {param_style}, balance = {param_style} 
+                WHERE id = {param_style}
+            """
+            execute_query(cur, query, (full_name, phone, balance, user_id))
         else:
             full_name = data.get('full_name', user['full_name'])
-            cur.execute("""
-                UPDATE rgz_users 
-                SET full_name = %s 
-                WHERE id = %s;
-            """, (full_name, user_id))
+            query = f"UPDATE rgz_users SET full_name = {param_style} WHERE id = {param_style}"
+            execute_query(cur, query, (full_name, user_id))
         
         # Если нужно обновить пароль
         if data.get('new_password'):
             hashed_password = generate_password_hash(data['new_password'], method='scrypt')
-            cur.execute("""
-                UPDATE rgz_users 
-                SET password = %s 
-                WHERE id = %s;
-            """, (hashed_password, user_id))
+            query = f"UPDATE rgz_users SET password = {param_style} WHERE id = {param_style}"
+            execute_query(cur, query, (hashed_password, user_id))
         
         db_close(conn, cur)
         return jsonify({'success': True, 'message': 'Пользователь обновлен'})
@@ -553,9 +738,11 @@ def api_delete_user(user_id):
     cur = None
     try:
         conn, cur = db_connect()
+        param_style = get_param_style()
         
         # Проверяем, что пользователь существует
-        cur.execute("SELECT * FROM rgz_users WHERE id = %s;", (user_id,))
+        query = f"SELECT * FROM rgz_users WHERE id = {param_style}"
+        execute_query(cur, query, (user_id,))
         user_row = cur.fetchone()
         
         if not user_row:
@@ -566,11 +753,12 @@ def api_delete_user(user_id):
         
         # Удаляем связанные транзакции пользователя (если он клиент)
         if user.get('role') == 'client' and user.get('account_number'):
-            cur.execute("DELETE FROM rgz_transactions WHERE from_account = %s OR to_account = %s;", 
-                       (user['account_number'], user['account_number']))
+            query = f"DELETE FROM rgz_transactions WHERE from_account = {param_style} OR to_account = {param_style}"
+            execute_query(cur, query, (user['account_number'], user['account_number']))
         
         # Удаляем пользователя
-        cur.execute("DELETE FROM rgz_users WHERE id = %s;", (user_id,))
+        query = f"DELETE FROM rgz_users WHERE id = {param_style}"
+        execute_query(cur, query, (user_id,))
         
         db_close(conn, cur)
         return jsonify({'success': True, 'message': 'Пользователь удален'})
@@ -589,7 +777,9 @@ def api_current_user():
     cur = None
     try:
         conn, cur = db_connect()
-        cur.execute("SELECT * FROM rgz_users WHERE id = %s;", (session['user_id'],))
+        param_style = get_param_style()
+        query = f"SELECT * FROM rgz_users WHERE id = {param_style}"
+        execute_query(cur, query, (session['user_id'],))
         user_row = cur.fetchone()
         
         if not user_row:
@@ -620,60 +810,91 @@ def api_statistics():
     cur = None
     try:
         conn, cur = db_connect()
+        db_type = current_app.config.get('DB_TYPE', 'postgres')
         
         # Основная статистика
-        cur.execute("SELECT COUNT(*) as total_users FROM rgz_users;")
+        query = "SELECT COUNT(*) as total_users FROM rgz_users"
+        execute_query(cur, query)
         total_users = cur.fetchone()['total_users']
         
-        cur.execute("SELECT COUNT(*) as total_clients FROM rgz_users WHERE role = 'client';")
+        query = "SELECT COUNT(*) as total_clients FROM rgz_users WHERE role = 'client'"
+        execute_query(cur, query)
         total_clients = cur.fetchone()['total_clients']
         
-        cur.execute("SELECT COUNT(*) as total_managers FROM rgz_users WHERE role = 'manager';")
+        query = "SELECT COUNT(*) as total_managers FROM rgz_users WHERE role = 'manager'"
+        execute_query(cur, query)
         total_managers = cur.fetchone()['total_managers']
         
-        cur.execute("SELECT COALESCE(SUM(balance), 0) as total_balance FROM rgz_users WHERE role = 'client';")
+        query = "SELECT COALESCE(SUM(balance), 0) as total_balance FROM rgz_users WHERE role = 'client'"
+        execute_query(cur, query)
         total_balance_result = cur.fetchone()['total_balance']
         total_balance = float(total_balance_result) if total_balance_result else 0.0
         
-        cur.execute("SELECT COUNT(*) as total_transactions FROM rgz_transactions;")
+        query = "SELECT COUNT(*) as total_transactions FROM rgz_transactions"
+        execute_query(cur, query)
         total_transactions = cur.fetchone()['total_transactions']
         
         # Статистика по активным пользователям
-        cur.execute("""
-            SELECT COUNT(DISTINCT u.id) as active_clients
-            FROM rgz_users u
-            WHERE u.role = 'client' AND EXISTS (
-                SELECT 1 FROM rgz_transactions t 
-                WHERE t.from_account = u.account_number OR t.to_account = u.account_number
-            );
-        """)
+        if db_type == 'postgres':
+            query = """
+                SELECT COUNT(DISTINCT u.id) as active_clients
+                FROM rgz_users u
+                WHERE u.role = 'client' AND EXISTS (
+                    SELECT 1 FROM rgz_transactions t 
+                    WHERE t.from_account = u.account_number OR t.to_account = u.account_number
+                )
+            """
+        else:
+            query = """
+                SELECT COUNT(DISTINCT u.id) as active_clients
+                FROM rgz_users u
+                WHERE u.role = 'client' AND (
+                    EXISTS (SELECT 1 FROM rgz_transactions t WHERE t.from_account = u.account_number)
+                    OR EXISTS (SELECT 1 FROM rgz_transactions t WHERE t.to_account = u.account_number)
+                )
+            """
+        execute_query(cur, query)
         active_clients = cur.fetchone()['active_clients']
         
         # Статистика по транзакциям за последние 7 дней
-        cur.execute("""
-            SELECT 
-                DATE(transaction_date) as date,
-                COUNT(*) as transactions_count,
-                SUM(amount) as total_amount
-            FROM rgz_transactions 
-            WHERE transaction_date >= CURRENT_DATE - INTERVAL '7 days'
-            GROUP BY DATE(transaction_date)
-            ORDER BY date;
-        """)
+        if db_type == 'postgres':
+            query = """
+                SELECT 
+                    DATE(transaction_date) as date,
+                    COUNT(*) as transactions_count,
+                    SUM(amount) as total_amount
+                FROM rgz_transactions 
+                WHERE transaction_date >= CURRENT_DATE - INTERVAL '7 days'
+                GROUP BY DATE(transaction_date)
+                ORDER BY date
+            """
+        else:
+            query = """
+                SELECT 
+                    DATE(transaction_date) as date,
+                    COUNT(*) as transactions_count,
+                    SUM(amount) as total_amount
+                FROM rgz_transactions 
+                WHERE transaction_date >= date('now', '-7 days')
+                GROUP BY DATE(transaction_date)
+                ORDER BY date
+            """
         
+        execute_query(cur, query)
         weekly_stats = []
         for row in cur.fetchall():
             stats = convert_to_dict(row)
             weekly_stats.append(stats)
         
         # Топ 5 клиентов по балансу
-        cur.execute("""
+        query = """
             SELECT full_name, balance 
             FROM rgz_users 
             WHERE role = 'client' 
             ORDER BY balance DESC 
-            LIMIT 5;
-        """)
+            LIMIT 5
+        """
+        execute_query(cur, query)
         
         top_clients = []
         for row in cur.fetchall():
@@ -778,3 +999,4 @@ def after_request(response):
     if response.mimetype == 'application/json':
         response.headers['Content-Type'] = 'application/json; charset=utf-8'
     return response
+

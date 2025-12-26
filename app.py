@@ -8,10 +8,17 @@ from lab4 import lab4
 from lab5 import lab5
 from lab6 import lab6
 from lab7 import lab7
-from rgz import rgz
+from rgz import rgz, init_sqlite_db
 
 app = Flask(__name__)
 
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'секретно-секретный секрет')
+app.config['DB_TYPE'] = os.getenv('DB_TYPE', 'postgres')
+
+# Инициализация SQLite базы данных при запуске
+if app.config['DB_TYPE'] == 'sqlite':
+    with app.app_context():
+        init_sqlite_db()
 
 # Регистрируем все Blueprint
 app.register_blueprint(lab1)
@@ -23,7 +30,6 @@ app.register_blueprint(lab6)
 app.register_blueprint(lab7)
 app.register_blueprint(rgz)  # Добавляем РГЗ
 
-app.secret_key = 'your-secret-key-here-change-this-in-production'
 
 @app.route("/")
 @app.route("/index")
