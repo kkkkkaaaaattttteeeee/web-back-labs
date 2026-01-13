@@ -15,6 +15,11 @@
         const closeModal = document.getElementById('close-modal');
         const snowflakes = document.querySelector('.snowflakes');
         const resetButton = document.getElementById('reset-button');
+        const loginButton = document.getElementById('login-button');
+        const logoutButton = document.getElementById('logout-button');
+        const santaButton = document.getElementById('santa-button');
+        const loginForm = document.getElementById('login-form');
+        const authStatus = document.getElementById('auth-status');
 
         // Создание снежинок
         for (let i = 0; i < 50; i++) {
@@ -101,6 +106,111 @@
                     });
                 }
             });
+        }
+
+        // Кнопка входа
+        if (loginButton) {
+            loginButton.addEventListener('click', function() {
+                const username = document.getElementById('username').value;
+                const password = document.getElementById('password').value;
+                
+                if (!username || !password) {
+                    messageDiv.textContent = 'Введите логин и пароль';
+                    messageDiv.style.color = '#ff4444';
+                    return;
+                }
+                
+                fetch('/lab9/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ username: username, password: password })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAuthUI(true);
+                        messageDiv.textContent = data.message;
+                        messageDiv.style.color = '#44ff44';
+                    } else {
+                        messageDiv.textContent = data.message;
+                        messageDiv.style.color = '#ff4444';
+                    }
+                })
+                .catch(error => {
+                    messageDiv.textContent = 'Ошибка авторизации';
+                    messageDiv.style.color = '#ff4444';
+                });
+            });
+        }
+
+        // Кнопка выхода
+        if (logoutButton) {
+            logoutButton.addEventListener('click', function() {
+                fetch('/lab9/logout', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAuthUI(false);
+                        messageDiv.textContent = 'Вы вышли из системы';
+                        messageDiv.style.color = '#44ff44';
+                    }
+                })
+                .catch(error => {
+                    messageDiv.textContent = 'Ошибка выхода';
+                    messageDiv.style.color = '#ff4444';
+                });
+            });
+        }
+
+        // Кнопка Деда Мороза
+        if (santaButton) {
+            santaButton.addEventListener('click', function() {
+                if (confirm('Дед Мороз наполняет все коробки заново! Продолжить?')) {
+                    fetch('/lab9/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Дед Мороз наполнил все коробки! Страница будет перезагружена.');
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Ошибка при наполнении коробок');
+                    });
+                }
+            });
+        }
+
+        // Функция показа/скрытия UI авторизации
+        function showAuthUI(isAuthenticated) {
+            if (isAuthenticated) {
+                loginForm.style.display = 'none';
+                authStatus.style.display = 'block';
+                if (santaButton) santaButton.style.display = 'inline-block';
+            } else {
+                loginForm.style.display = 'block';
+                authStatus.style.display = 'none';
+                if (santaButton) santaButton.style.display = 'none';
+            }
+        }
+
+        // Проверка авторизации при загрузке
+        if ({{ is_authenticated|tojson }}) {
+            showAuthUI(true);
+        } else {
+            showAuthUI(false);
         }
     });
 </script>
@@ -358,6 +468,96 @@
         font-style: italic;
     }
 
+    /* Стили для авторизации */
+    .auth-container {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 15px;
+        margin: 20px auto;
+        max-width: 400px;
+        color: white;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(5px);
+        border: 2px solid #ffd700;
+    }
+
+    .auth-container h3 {
+        color: #ffd700;
+        margin-top: 0;
+        font-size: 20px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+
+    .auth-input {
+        width: 80%;
+        padding: 10px;
+        margin: 8px 0;
+        border-radius: 8px;
+        border: 2px solid #ffd700;
+        background: rgba(255, 255, 255, 0.9);
+        font-size: 16px;
+        text-align: center;
+    }
+
+    .auth-button {
+        background: linear-gradient(to bottom, #00aa00, #008800);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s;
+        border: 2px solid #ffd700;
+        margin: 10px 5px;
+    }
+
+    .auth-button:hover {
+        background: linear-gradient(to bottom, #00cc00, #00aa00);
+        transform: scale(1.05);
+    }
+
+    .logout-button {
+        background: linear-gradient(to bottom, #ff9900, #ff6600);
+    }
+
+    .logout-button:hover {
+        background: linear-gradient(to bottom, #ffaa00, #ff7700);
+    }
+
+    .santa-button {
+        background: linear-gradient(to bottom, #ff0000, #cc0000);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: all 0.3s;
+        border: 2px solid #ffd700;
+        margin-top: 10px;
+        display: none;
+    }
+
+    .santa-button:hover {
+        background: linear-gradient(to bottom, #ff4444, #ff0000);
+        transform: scale(1.05);
+        box-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+    }
+
+    .premium-note {
+        color: #ffd700;
+        font-size: 14px;
+        margin-top: 5px;
+        font-style: italic;
+        text-align: center;
+    }
+
     /* Для мобильных устройств */
     @media (max-width: 768px) {
         .gift-box {
@@ -381,6 +581,10 @@
         .reset-button {
             padding: 6px 12px;
             font-size: 12px;
+        }
+        
+        .auth-input {
+            width: 90%;
         }
     }
 </style>
@@ -407,12 +611,31 @@
         </div>
     </div>
 
+    <!-- Форма авторизации -->
+    <div class="auth-container" id="login-form" {% if is_authenticated %}style="display:none;"{% endif %}>
+        <h3>🎅 Авторизация для Деда Мороза</h3>
+        <input type="text" id="username" class="auth-input" placeholder="Логин" value="Дед Мороз">
+        <input type="password" id="password" class="auth-input" placeholder="Пароль" value="2026">
+        <button id="login-button" class="auth-button">Войти</button>
+        <p class="premium-note">Коробки 7-10 только для авторизованных пользователей</p>
+    </div>
+
+    <!-- Статус авторизации -->
+    <div class="auth-container" id="auth-status" {% if not is_authenticated %}style="display:none;"{% endif %}>
+        <h3>🎅 Вы вошли как Дед Мороз!</h3>
+        <p>Теперь доступны все коробки!</p>
+        <button id="logout-button" class="auth-button logout-button">Выйти</button>
+        <button id="santa-button" class="santa-button">🎁 Дед Мороз (наполнить все коробки)</button>
+    </div>
+
     <div class="instructions">
         <h3>🎁 Инструкция:</h3>
         <p>1. Кликните на любую коробку, чтобы открыть подарок</p>
         <p>2. Каждая коробка содержит уникальное поздравление</p>
         <p>3. Можно открыть только 3 коробки</p>
         <p>4. Открытые коробки остаются пустыми для всех пользователей</p>
+        <p>5. Коробки 7-10 доступны только авторизованным пользователям</p>
+        <p>6. Логин: <strong>Дед Мороз</strong>, Пароль: <strong>2026</strong></p>
     </div>
 
     <div class="boxes-container">
@@ -421,7 +644,6 @@
              style="top: {{ positions[i].top }}%; 
                     left: {{ positions[i].left }}%;
                     transform: rotate({{ positions[i].rotation }}deg);">
-            <!-- Уникальное изображение для каждой из 10 коробок -->
             <img src="{{ url_for('static', filename='boxes/box' ~ (i+1) ~ '.png') }}" 
                  alt="Подарок {{ i+1 }}">
         </div>

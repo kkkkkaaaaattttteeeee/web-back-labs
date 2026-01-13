@@ -2,35 +2,33 @@ from flask import Blueprint, render_template, session, jsonify, request
 import random
 import json
 import os
-from datetime import datetime
 
 lab9 = Blueprint('lab9', __name__)
 
 # Хранилище для открытых коробок (в памяти)
 opened_boxes = set()
 
-# Поздравления и подарки для каждой коробки
+# Поздравления и подарки для каждой коробки (коробки 7-10 только для авторизованных)
 BOX_DATA = [
-    {"id": 1, "congratulation": "С Новым годом! Пусть сбудутся все мечты!", "gift": "/static/gifts/gift1.png"},
-    {"id": 2, "congratulation": "Желаю здоровья и счастья в новом году!", "gift": "/static/gifts/gift2.png"},
-    {"id": 3, "congratulation": "Пусть новый год принесет много радости!", "gift": "/static/gifts/gift3.png"},
-    {"id": 4, "congratulation": "Желаю успехов во всех начинаниях!", "gift": "/static/gifts/gift4.png"},
-    {"id": 5, "congratulation": "Пусть год будет полон приятных сюрпризов!", "gift": "/static/gifts/gift5.png"},
-    {"id": 6, "congratulation": "Счастья, любви и процветания!", "gift": "/static/gifts/gift6.png"},
-    {"id": 7, "congratulation": "Мечтайте, верьте, добивайтесь целей!", "gift": "/static/gifts/gift7.png"},
-    {"id": 8, "congratulation": "Пусть каждый день дарит улыбки!", "gift": "/static/gifts/gift8.png"},
-    {"id": 9, "congratulation": "Новых достижений и побед!", "gift": "/static/gifts/gift9.png"},
-    {"id": 10, "congratulation": "Мира, добра и тепла в вашем доме!", "gift": "/static/gifts/gift10.png"}
+    {"id": 1, "congratulation": "С Новым годом! Пусть сбудутся все мечты!", "gift": "/static/gifts/gift1.png", "premium": False},
+    {"id": 2, "congratulation": "Желаю здоровья и счастья в новом году!", "gift": "/static/gifts/gift2.png", "premium": False},
+    {"id": 3, "congratulation": "Пусть новый год принесет много радости!", "gift": "/static/gifts/gift3.png", "premium": False},
+    {"id": 4, "congratulation": "Желаю успехов во всех начинаниях!", "gift": "/static/gifts/gift4.png", "premium": False},
+    {"id": 5, "congratulation": "Пусть год будет полон приятных сюрпризов!", "gift": "/static/gifts/gift5.png", "premium": False},
+    {"id": 6, "congratulation": "Счастья, любви и процветания!", "gift": "/static/gifts/gift6.png", "premium": False},
+    {"id": 7, "congratulation": "Мечтайте, верьте, добивайтесь целей!", "gift": "/static/gifts/gift7.png", "premium": True},
+    {"id": 8, "congratulation": "Пусть каждый день дарит улыбки!", "gift": "/static/gifts/gift8.png", "premium": True},
+    {"id": 9, "congratulation": "Новых достижений и побед!", "gift": "/static/gifts/gift9.png", "premium": True},
+    {"id": 10, "congratulation": "Мира, добра и тепла в вашем доме!", "gift": "/static/gifts/gift10.png", "premium": True}
 ]
 
-# Фиксированные позиции для коробок (учитываем увеличенный размер)
+# Фиксированные позиции для коробок
 if not os.path.exists('box_positions.json'):
     positions = []
     for i in range(10):
-        # Уменьшаем диапазон, чтобы коробки не выходили за границы
         positions.append({
-            "top": random.randint(5, 70),  # было 5-85
-            "left": random.randint(5, 70),  # было 5-85
+            "top": random.randint(5, 70),
+            "left": random.randint(5, 70),
             "rotation": random.randint(-15, 15)
         })
     with open('box_positions.json', 'w') as f:
@@ -48,9 +46,12 @@ def main():
         session['opened_by_user'] = []
     
     remaining_boxes = 10 - len(opened_boxes)
+    is_authenticated = session.get('authenticated', False)
+    
     return render_template('lab9/index.html', 
                          positions=BOX_POSITIONS,
-                         remaining=remaining_boxes)
+                         remaining=remaining_boxes,
+                         is_authenticated=is_authenticated)
 
 @lab9.route('/lab9/open_box', methods=['POST'])
 def open_box():
@@ -82,6 +83,13 @@ def open_box():
     box_data = next((box for box in BOX_DATA if box["id"] == box_id), None)
     
     if box_data:
+        # Проверяем, премиальная ли коробка
+        if box_data["premium"] and not session.get('authenticated'):
+            return jsonify({
+                "success": False,
+                "message": "Эта коробка только для авторизованных пользователей!"
+            })
+        
         # Отмечаем коробку как открытую (глобально)
         opened_boxes.add(box_id)
         
@@ -110,3 +118,25 @@ def reset():
     opened_boxes.clear()
     session.clear()
     return jsonify({"success": True, "message": "Все коробки сброшены!"})
+
+@lab9.route('/lab9/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    
+    # Простая проверка логина и пароля
+    if username == "Дед Мороз" and password == "2026":
+        session['authenticated'] = True
+        return jsonify({"success": True, "message": "Авторизация успешна!"})
+    
+    return jsonify({"success": False, "message": "Неверный логин или пароль!"})
+
+@lab9.route('/lab9/logout', methods=['POST'])
+def logout():
+    session['authenticated'] = False
+    return jsonify({"success": True, "message": "Вы вышли из системы!"})
+
+@lab9.route('/lab9/check_auth')
+def check_auth():
+    return jsonify({"is_authenticated": session.get('authenticated', False)})
