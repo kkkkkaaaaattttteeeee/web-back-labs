@@ -988,3 +988,7 @@
 2025-12-20 01:12:05: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/.well-known/appspecific/com.chrome.devtools.json".
 2025-12-22 13:36:25: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/rgz/api/user/current".
 2025-12-22 13:36:30: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/rgz/api/user/current".
+2025-12-27 01:22:48: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/favicon.ico".
+2025-12-27 10:33:07: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/.well-known/appspecific/com.chrome.devtools.json".
+2025-12-27 10:33:33: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/.well-known/appspecific/com.chrome.devtools.json".
+2025-12-27 10:33:42: 127.0.0.1 попытался зайти на "http://127.0.0.1:5000/.well-known/appspecific/com.chrome.devtools.json".

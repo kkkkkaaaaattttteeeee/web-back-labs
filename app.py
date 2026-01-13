@@ -28,7 +28,7 @@ app.register_blueprint(lab4)
 app.register_blueprint(lab5)
 app.register_blueprint(lab6)
 app.register_blueprint(lab7)
-app.register_blueprint(rgz)  # Добавляем РГЗ
+app.register_blueprint(rgz)  
 
 
 @app.route("/")
