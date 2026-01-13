@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>База знаний</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        
+        .header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #ddd;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 25px;
+            align-items: center;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #34495e;
+            font-size: 14px;
+            padding: 5px 10px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        
+        .nav-links a:hover {
+            background-color: #ecf0f1;
+        }
+        
+        .username {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-left: 20px;
+        }
+        
+        .main-content {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+        
+        .hero {
+            background: linear-gradient(135deg, #3498db, #2c3e50);
+            color: white;
+            padding: 60px 40px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .hero h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+        }
+        
+        .hero p {
+            font-size: 18px;
+            opacity: 0.9;
+        }
+        
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+        }
+        
+        .feature-card {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+        
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .feature-card h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .feature-card p {
+            color: #7f8c8d;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .nav-links {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .hero {
+                padding: 40px 20px;
+            }
+            
+            .hero h1 {
+                font-size: 28px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">База знаний</div>
+        <nav class="nav-links">
+            <a href="{{ url_for('lab8.articles') }}">Список статей</a>
+            <a href="{{ url_for('lab8.create') }}">Создать статью</a>
+            <a href="{{ url_for('lab8.login') }}">Вход</a>
+            <a href="{{ url_for('lab8.register') }}">Регистрация</a>
+            <span class="username">Anonymous</span>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section class="hero">
+            <h1>Добро пожаловать в Базу знаний</h1>
+            <p>Платформа для создания, хранения и обмена знаниями. Здесь вы найдете полезные статьи и сможете поделиться своими знаниями с другими.</p>
+        </section>
+        
+        <div class="features">
+            <div class="feature-card">
+                <h3>Читайте статьи</h3>
+                <p>Изучайте материалы, созданные сообществом. От программирования до философии.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Создавайте</h3>
+                <p>Делитесь своими знаниями, создавая новые статьи и руководства.</p>
+            </div>
+            
+            <div class="feature-card">
+                <h3>Обсуждайте</h3>
+                <p>Участвуйте в обсуждениях, задавайте вопросы и находите ответы.</p>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
