@@ -1,0 +1,441 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 9{% endblock %}
+
+{% block script %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const boxes = document.querySelectorAll('.gift-box');
+        const remainingCount = document.getElementById('remaining-count');
+        const openedCount = document.getElementById('opened-count');
+        const messageDiv = document.getElementById('message');
+        const giftDisplay = document.getElementById('gift-display');
+        const congratulationText = document.getElementById('congratulation-text');
+        const giftImage = document.getElementById('gift-image');
+        const closeModal = document.getElementById('close-modal');
+        const snowflakes = document.querySelector('.snowflakes');
+        const resetButton = document.getElementById('reset-button');
+
+        // Создание снежинок
+        for (let i = 0; i < 50; i++) {
+            const snowflake = document.createElement('div');
+            snowflake.className = 'snowflake';
+            snowflake.style.left = Math.random() * 100 + 'vw';
+            snowflake.style.animationDuration = Math.random() * 3 + 2 + 's';
+            snowflake.style.opacity = Math.random();
+            snowflake.style.fontSize = Math.random() * 10 + 10 + 'px';
+            snowflakes.appendChild(snowflake);
+        }
+
+        boxes.forEach(box => {
+            box.addEventListener('click', function() {
+                const boxId = parseInt(this.dataset.boxId);
+                
+                fetch('/lab9/open_box', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ box_id: boxId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Показываем поздравление и подарок
+                        congratulationText.textContent = data.congratulation;
+                        giftImage.src = data.gift;
+                        giftDisplay.style.display = 'flex';
+                        
+                        // Обновляем счетчики
+                        openedCount.textContent = data.opened_count;
+                        remainingCount.textContent = data.remaining_boxes;
+                        
+                        // Помечаем коробку как открытую
+                        this.classList.add('opened');
+                        this.style.opacity = '0.5';
+                        this.style.cursor = 'default';
+                        
+                        messageDiv.textContent = '';
+                    } else {
+                        messageDiv.textContent = data.message;
+                        messageDiv.style.color = '#ff4444';
+                    }
+                })
+                .catch(error => {
+                    messageDiv.textContent = 'Ошибка при открытии коробки';
+                    messageDiv.style.color = '#ff4444';
+                });
+            });
+        });
+
+        // Закрытие модального окна
+        closeModal.addEventListener('click', function() {
+            giftDisplay.style.display = 'none';
+        });
+
+        giftDisplay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+
+        // Кнопка сброса
+        if (resetButton) {
+            resetButton.addEventListener('click', function() {
+                if (confirm('Вы уверены, что хотите сбросить все открытые коробки? Это действие удалит все открытые подарки для всех пользователей.')) {
+                    fetch('/lab9/reset', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Все коробки сброшены! Страница будет перезагружена.');
+                            location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        alert('Ошибка при сбросе коробок');
+                    });
+                }
+            });
+        }
+    });
+</script>
+<style>
+    .new-year-container {
+        position: relative;
+        min-height: 100vh;
+        background: linear-gradient(to bottom, #0a2e38 0%, #1a5f7a 100%);
+        overflow: hidden;
+        padding: 20px;
+    }
+
+    .snowflakes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .snowflake {
+        position: absolute;
+        color: white;
+        user-select: none;
+        animation: fall linear infinite;
+    }
+
+    @keyframes fall {
+        to {
+            transform: translateY(100vh) rotate(360deg);
+        }
+    }
+
+    .title {
+        text-align: center;
+        color: #ffd700;
+        font-family: 'Arial Rounded MT Bold', sans-serif;
+        text-shadow: 0 0 10px #ff0000;
+        margin-bottom: 30px;
+        position: relative;
+        z-index: 2;
+        font-size: 2.5rem;
+    }
+
+    .counters {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 15px;
+        margin: 20px auto;
+        max-width: 400px;
+        color: white;
+        text-align: center;
+        position: relative;
+        z-index: 2;
+        backdrop-filter: blur(5px);
+        border: 2px solid #ffd700;
+    }
+
+    .counter-item {
+        margin: 10px 0;
+        font-size: 18px;
+    }
+
+    .counter-value {
+        color: #ffd700;
+        font-weight: bold;
+        font-size: 24px;
+    }
+
+    .boxes-container {
+        position: relative;
+        height: 70vh;
+        margin: 20px;
+        border: 3px dashed #ffd700;
+        border-radius: 20px;
+        position: relative;
+        z-index: 2;
+        background: rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+
+    .gift-box {
+        position: absolute;
+        width: 120px;
+        height: 120px;
+        cursor: pointer;
+        transition: transform 0.3s, opacity 0.3s;
+        z-index: 2;
+    }
+
+    .gift-box:hover {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .gift-box.opened {
+        opacity: 0.5;
+        cursor: default;
+        transform: none;
+    }
+
+    .gift-box img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
+    }
+
+    .message {
+        text-align: center;
+        color: #ffd700;
+        font-size: 18px;
+        margin: 20px;
+        min-height: 30px;
+        position: relative;
+        z-index: 2;
+    }
+
+    .gift-display {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.9);
+        z-index: 1000;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+    }
+
+    .gift-content {
+        background: linear-gradient(45deg, #ff0000, #ffd700);
+        padding: 40px;
+        border-radius: 25px;
+        text-align: center;
+        max-width: 700px;
+        width: 90%;
+        animation: pulse 2s infinite;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+        100% { transform: scale(1); }
+    }
+
+    .congratulation {
+        color: white;
+        font-size: 32px;
+        margin-bottom: 30px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        width: 100%;
+        font-weight: bold;
+        line-height: 1.4;
+    }
+
+    .gift-image {
+        max-width: 300px;
+        max-height: 300px;
+        margin: 20px auto;
+        border: 5px solid white;
+        border-radius: 15px;
+        background: white;
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.7);
+    }
+
+    .close-modal {
+        background: #ff4444;
+        color: white;
+        border: none;
+        padding: 12px 25px;
+        border-radius: 10px;
+        cursor: pointer;
+        font-size: 18px;
+        margin-top: 25px;
+        transition: background 0.3s;
+        font-weight: bold;
+    }
+
+    .close-modal:hover {
+        background: #ff6666;
+        transform: scale(1.05);
+    }
+
+    .instructions {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 15px;
+        padding: 15px;
+        margin: 20px auto;
+        max-width: 600px;
+        color: white;
+        position: relative;
+        z-index: 2;
+        border: 2px solid #ff0000;
+        font-size: 16px;
+    }
+
+    .instructions h3 {
+        color: #ffd700;
+        margin-top: 0;
+        font-size: 20px;
+        text-align: center;
+    }
+
+    .instructions p {
+        margin: 8px 0;
+    }
+
+    /* Анимация для вновь открытой коробки */
+    @keyframes boxOpen {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+    }
+
+    .gift-box.opened {
+        animation: boxOpen 0.5s ease-in-out;
+    }
+
+    /* Стили для кнопки сброса */
+    .reset-button {
+        background: linear-gradient(to bottom, #ff9900, #ff6600);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: bold;
+        transition: all 0.3s;
+        border: 2px solid #ffd700;
+        box-shadow: 0 0 8px rgba(255, 153, 0, 0.5);
+        margin-top: 5px;
+    }
+
+    .reset-button:hover {
+        background: linear-gradient(to bottom, #ffaa00, #ff7700);
+        transform: scale(1.05);
+        box-shadow: 0 0 12px rgba(255, 153, 0, 0.8);
+    }
+
+    .reset-note {
+        color: #ffd700;
+        font-size: 10px;
+        margin-top: 3px;
+        opacity: 0.8;
+        font-style: italic;
+    }
+
+    /* Для мобильных устройств */
+    @media (max-width: 768px) {
+        .gift-box {
+            width: 100px;
+            height: 100px;
+        }
+        
+        .boxes-container {
+            height: 60vh;
+        }
+        
+        .congratulation {
+            font-size: 24px;
+        }
+        
+        .gift-content {
+            padding: 20px;
+            max-width: 90%;
+        }
+        
+        .reset-button {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block main %}
+<div class="new-year-container">
+    <div class="snowflakes"></div>
+    
+    <h1 class="title">🎄 Новогодние Поздравления 🎅</h1>
+    
+    <div class="counters">
+        <div class="counter-item">
+            Открыто коробок: <span class="counter-value" id="opened-count">0</span>/3
+        </div>
+        <div class="counter-item">
+            Осталось закрытых коробок: <span class="counter-value" id="remaining-count">{{ remaining }}</span>/10
+        </div>
+        <div class="counter-item">
+            <button id="reset-button" class="reset-button">
+                🔄 Сбросить все коробки
+            </button>
+            <p class="reset-note">(Для тестирования)</p>
+        </div>
+    </div>
+
+    <div class="instructions">
+        <h3>🎁 Инструкция:</h3>
+        <p>1. Кликните на любую коробку, чтобы открыть подарок</p>
+        <p>2. Каждая коробка содержит уникальное поздравление</p>
+        <p>3. Можно открыть только 3 коробки</p>
+        <p>4. Открытые коробки остаются пустыми для всех пользователей</p>
+    </div>
+
+    <div class="boxes-container">
+        {% for i in range(10) %}
+        <div class="gift-box" data-box-id="{{ i+1 }}" 
+             style="top: {{ positions[i].top }}%; 
+                    left: {{ positions[i].left }}%;
+                    transform: rotate({{ positions[i].rotation }}deg);">
+            <!-- Уникальное изображение для каждой из 10 коробок -->
+            <img src="{{ url_for('static', filename='boxes/box' ~ (i+1) ~ '.png') }}" 
+                 alt="Подарок {{ i+1 }}">
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="message" id="message"></div>
+
+    <div class="gift-display" id="gift-display">
+        <div class="gift-content">
+            <h2 class="congratulation" id="congratulation-text"></h2>
+            <img class="gift-image" id="gift-image" src="" alt="Подарок">
+            <button class="close-modal" id="close-modal">Закрыть</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
