@@ -4,8 +4,8 @@
 
 {% block main %}
 <style>
-    .login-container {
-        max-width: 500px;
+    .create-container {
+        max-width: 800px;
         margin: 0 auto;
         padding: 20px;
         background-color: #f8f9fa;
@@ -23,11 +23,16 @@
         font-weight: bold;
     }
     
-    .form-group input {
+    .form-group input, .form-group textarea {
         width: 100%;
         padding: 8px;
         border: 1px solid #ced4da;
         border-radius: 4px;
+    }
+    
+    .form-group textarea {
+        min-height: 200px;
+        resize: vertical;
     }
     
     .error-message {
@@ -44,8 +49,8 @@
     }
 </style>
 
-<div class="login-container">
-    <h1>Вход в систему</h1>
+<div class="create-container">
+    <h1>Создать статью</h1>
     
     {% if error %}
     <div class="error-message">
@@ -53,31 +58,31 @@
     </div>
     {% endif %}
     
-    <form action="{{ url_for('lab8.login') }}" method="post">
+    <form action="{{ url_for('lab8.create') }}" method="post">
         <div class="form-group">
-            <label for="login">Логин:</label>
-            <input type="text" id="login" name="login" required>
+            <label for="title">Заголовок:</label>
+            <input type="text" id="title" name="title" value="{{ title or '' }}" required>
         </div>
         
         <div class="form-group">
-            <label for="password">Пароль:</label>
-            <input type="password" id="password" name="password" required>
+            <label for="article_text">Текст статьи:</label>
+            <textarea id="article_text" name="article_text" required>{{ article_text or '' }}</textarea>
         </div>
         
         <div class="checkbox-group">
             <label>
-                <input type="checkbox" name="remember" value="1">
-                Запомнить меня
+                <input type="checkbox" name="is_public" value="1" checked>
+                Сделать статью публичной
             </label>
         </div>
         
-        <button type="submit" style="padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            Войти
+        <button type="submit" style="padding: 10px 20px; background-color: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            Создать статью
         </button>
+        
+        <a href="{{ url_for('lab8.articles_list') }}" style="padding: 10px 20px; background-color: #6c757d; color: white; text-decoration: none; border-radius: 4px; margin-left: 10px;">
+            Отмена
+        </a>
     </form>
-    
-    <p style="margin-top: 20px;">
-        Нет аккаунта? <a href="{{ url_for('lab8.register') }}">Зарегистрируйтесь</a>
-    </p>
 </div>
 {% endblock %}

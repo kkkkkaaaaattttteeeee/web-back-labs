@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 8{% endblock %}
+
+{% block main %}
+<style>
+    .articles-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .articles-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .articles-table th, .articles-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .articles-table th {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    .articles-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .action-buttons a, .action-buttons button {
+        padding: 5px 10px;
+        text-decoration: none;
+        border-radius: 3px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+    }
+    
+    .edit-btn {
+        background-color: #007bff;
+        color: white;
+        margin-right: 5px;
+    }
+    
+    .delete-btn {
+        background-color: #dc3545;
+        color: white;
+    }
+    
+    .create-btn {
+        background-color: #28a745;
+        color: white;
+        padding: 10px 20px;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        margin-top: 20px;
+    }
+    
+    .no-articles {
+        padding: 20px;
+        text-align: center;
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="articles-container">
+    <h1>Мои статьи</h1>
+    
+    {% if articles %}
+        <table class="articles-table">
+            <thead>
+                <tr>
+                    <th>Заголовок</th>
+                    <th>Статус</th>
+                    <th>Лайки</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in articles %}
+                <tr>
+                    <td><strong>{{ article.title }}</strong></td>
+                    <td>
+                        {% if article.is_public %}
+                            <span style="color: #28a745;">Публичная</span>
+                        {% else %}
+                            <span style="color: #6c757d;">Приватная</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ article.likes }}</td>
+                    <td class="action-buttons">
+                        <a href="{{ url_for('lab8.edit', article_id=article.id) }}" class="edit-btn">Редактировать</a>
+                        <form action="{{ url_for('lab8.delete', article_id=article.id) }}" method="post" style="display: inline;">
+                            <button type="submit" onclick="return confirm('Вы уверены, что хотите удалить эту статью?')" class="delete-btn">
+                                Удалить
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-articles">
+            <p>У вас пока нет статей.</p>
+            <a href="{{ url_for('lab8.create') }}" class="create-btn">Создать первую статью</a>
+        </div>
+    {% endif %}
+    
+    {% if articles %}
+        <a href="{{ url_for('lab8.create') }}" class="create-btn">Создать новую статью</a>
+    {% endif %}
+</div>
+{% endblock %}

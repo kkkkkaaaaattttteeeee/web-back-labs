@@ -1,3 +1,4 @@
+# models.py
 from . import db
 from flask_login import UserMixin
 
@@ -14,3 +15,13 @@ class articles(db.Model):
     is_favorite = db.Column(db.Boolean)
     is_public = db.Column(db.Boolean)
     likes = db.Column(db.Integer)
+    
+ # Конструктор (обязательно!)
+    def __init__(self, login_id=None, title=None, article_text=None, 
+                 is_favorite=False, is_public=False, likes=0):
+        self.login_id = login_id
+        self.title = title
+        self.article_text = article_text
+        self.is_favorite = is_favorite
+        self.is_public = is_public
+        self.likes = likes

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 8{% endblock %}
+
+{% block main %}
+<style>
+    .search-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .search-form {
+        margin-bottom: 20px;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+    
+    .search-button {
+        padding: 10px 20px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+    
+    .error-message {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="search-container">
+    <h1>Поиск статей</h1>
+    
+    {% if error %}
+    <div class="error-message">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    <form class="search-form" action="{{ url_for('lab8.search_articles') }}" method="post">
+        <input type="text" 
+               name="search_query" 
+               class="search-input" 
+               placeholder="Введите текст для поиска..." 
+               value="{{ search_query or '' }}"
+               required>
+        <button type="submit" class="search-button">Искать</button>
+    </form>
+    
+    <a href="{{ url_for('lab8.public_articles') }}" class="back-link">Назад к публичным статьям</a>
+    
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('lab8.articles_list') }}" class="back-link" style="margin-left: 10px; background-color: #007bff;">
+            Мои статьи
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

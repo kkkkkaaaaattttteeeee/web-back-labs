@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block lab %}Лабораторная работа 8{% endblock %}
+
+{% block main %}
+<style>
+    .search-results-container {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .search-results-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    
+    .search-results-table th, .search-results-table td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    
+    .search-results-table th {
+        background-color: #e9ecef;
+        font-weight: bold;
+    }
+    
+    .search-results-table tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .search-info {
+        margin-bottom: 20px;
+        padding: 15px;
+        background-color: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 4px;
+        color: #0c5460;
+    }
+    
+    .no-results {
+        padding: 20px;
+        text-align: center;
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 4px;
+    }
+    
+    .author-name {
+        color: #6c757d;
+        font-style: italic;
+    }
+    
+    .owner-badge {
+        display: inline-block;
+        background-color: #17a2b8;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        margin-left: 10px;
+    }
+    
+    .back-link {
+        display: inline-block;
+        margin-top: 20px;
+        padding: 10px 20px;
+        background-color: #6c757d;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+</style>
+
+<div class="search-results-container">
+    <h1>Результаты поиска</h1>
+    
+    <div class="search-info">
+        <p>По запросу: <strong>"{{ search_query }}"</strong></p>
+        <p>Найдено статей: <strong>{{ results_count }}</strong></p>
+    </div>
+    
+    {% if articles %}
+        <table class="search-results-table">
+            <thead>
+                <tr>
+                    <th>Заголовок</th>
+                    <th>Автор</th>
+                    <th>Статус</th>
+                    <th>Лайки</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for article in articles %}
+                <tr>
+                    <td><strong>{{ article.title }}</strong></td>
+                    <td class="author-name">
+                        {{ article.author_name }}
+                        {% if article.is_owner %}
+                            <span class="owner-badge">Ваша статья</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if article.is_public %}
+                            <span style="color: #28a745;">Публичная</span>
+                        {% else %}
+                            <span style="color: #6c757d;">Приватная</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ article.likes }}</td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="border-bottom: 2px solid #dee2e6;">
+                        <div style="max-height: 100px; overflow-y: auto; padding: 10px; background-color: #f8f9fa; border-radius: 4px;">
+                            {{ article.article_text[:300] }}{% if article.article_text|length > 300 %}...{% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="no-results">
+            <p>По вашему запросу ничего не найдено.</p>
+        </div>
+    {% endif %}
+    
+    <a href="{{ url_for('lab8.search_articles') }}" class="back-link">Новый поиск</a>
+    <a href="{{ url_for('lab8.public_articles') }}" class="back-link" style="margin-left: 10px;">Публичные статьи</a>
+    
+    {% if current_user.is_authenticated %}
+        <a href="{{ url_for('lab8.articles_list') }}" class="back-link" style="margin-left: 10px; background-color: #007bff;">
+            Мои статьи
+        </a>
+    {% endif %}
+</div>
+{% endblock %}

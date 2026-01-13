@@ -1,173 +1,180 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>База знаний</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-        
-        body {
-            background-color: #f5f5f5;
-            color: #333;
-        }
-        
-        .header {
-            background-color: #ffffff;
-            border-bottom: 1px solid #ddd;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .logo {
-            font-size: 24px;
-            font-weight: bold;
-            color: #2c3e50;
-        }
-        
-        .nav-links {
-            display: flex;
-            gap: 25px;
-            align-items: center;
-        }
-        
-        .nav-links a {
-            text-decoration: none;
-            color: #34495e;
-            font-size: 14px;
-            padding: 5px 10px;
-            border-radius: 3px;
-            transition: background-color 0.2s;
-        }
-        
-        .nav-links a:hover {
-            background-color: #ecf0f1;
-        }
-        
-        .username {
-            color: #7f8c8d;
-            font-size: 14px;
-            margin-left: 20px;
-        }
-        
-        .main-content {
-            max-width: 1200px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        
-        .hero {
-            background: linear-gradient(135deg, #3498db, #2c3e50);
-            color: white;
-            padding: 60px 40px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-        
-        .hero h1 {
-            font-size: 36px;
-            margin-bottom: 20px;
-        }
-        
-        .hero p {
-            font-size: 18px;
-            opacity: 0.9;
-        }
-        
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 25px;
-            margin-top: 40px;
-        }
-        
-        .feature-card {
-            background: white;
-            padding: 25px;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .feature-card h3 {
-            color: #2c3e50;
-            margin-bottom: 15px;
-        }
-        
-        .feature-card p {
-            color: #7f8c8d;
-            line-height: 1.5;
-        }
-        
-        @media (max-width: 768px) {
-            .header {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .nav-links {
-                flex-wrap: wrap;
-                justify-content: center;
-            }
-            
-            .hero {
-                padding: 40px 20px;
-            }
-            
-            .hero h1 {
-                font-size: 28px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <header class="header">
-        <div class="logo">База знаний</div>
-        <nav class="nav-links">
-            <a href="{{ url_for('lab8.articles') }}">Список статей</a>
-            <a href="{{ url_for('lab8.create') }}">Создать статью</a>
-            <a href="{{ url_for('lab8.login') }}">Вход</a>
-            <a href="{{ url_for('lab8.register') }}">Регистрация</a>
-            <span class="username">Anonymous</span>
-        </nav>
-    </header>
+{% extends "base.html" %}
 
-    <main class="main-content">
-        <section class="hero">
-            <h1>Добро пожаловать в Базу знаний</h1>
-            <p>Платформа для создания, хранения и обмена знаниями. Здесь вы найдете полезные статьи и сможете поделиться своими знаниями с другими.</p>
-        </section>
+{% block lab %}Лабораторная работа 8{% endblock %}
+
+{% block main %}
+<style>
+    .lab8-container {
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+    
+    .user-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .nav-links {
+        margin: 20px 0;
+        padding: 15px;
+        background-color: #e9ecef;
+        border-radius: 5px;
+    }
+    
+    .nav-links a {
+        margin-right: 15px;
+        padding: 8px 16px;
+        background-color: #007bff;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+        display: inline-block;
+        margin-bottom: 5px;
+    }
+    
+    .nav-links a:hover {
+        background-color: #0056b3;
+    }
+    
+    .public-articles-link {
+        background-color: #28a745 !important;
+    }
+    
+    .public-articles-link:hover {
+        background-color: #218838 !important;
+    }
+    
+    .search-link {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+    }
+    
+    .search-link:hover {
+        background-color: #e0a800 !important;
+    }
+    
+    .my-articles-link {
+        background-color: #17a2b8 !important;
+    }
+    
+    .my-articles-link:hover {
+        background-color: #138496 !important;
+    }
+    
+    .welcome-message {
+        background-color: #d4edda;
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 20px;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .features-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 30px;
+    }
+    
+    .feature-card {
+        background-color: white;
+        padding: 20px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .feature-card h3 {
+        margin-top: 0;
+        color: #333;
+    }
+    
+    .feature-card ul {
+        padding-left: 20px;
+        margin-bottom: 0;
+    }
+    
+    .feature-card li {
+        margin-bottom: 8px;
+    }
+</style>
+
+<div class="lab8-container">
+    <div class="user-info">
+        <strong>Пользователь:</strong>
+        {% if current_user.is_authenticated %}
+            {{ current_user.login }} | <a href="{{ url_for('lab8.logout') }}" style="color: #dc3545;">Выйти</a>
+        {% else %}
+            Anonymous
+        {% endif %}
+    </div>
+    
+    <div class="nav-links">
+        <a href="{{ url_for('lab8.index') }}">Главная</a>
+        <a href="{{ url_for('lab8.public_articles') }}" class="public-articles-link">📚 Публичные статьи</a>
+        <a href="{{ url_for('lab8.search_articles') }}" class="search-link">🔍 Поиск статей</a>
         
-        <div class="features">
-            <div class="feature-card">
-                <h3>Читайте статьи</h3>
-                <p>Изучайте материалы, созданные сообществом. От программирования до философии.</p>
-            </div>
-            
-            <div class="feature-card">
-                <h3>Создавайте</h3>
-                <p>Делитесь своими знаниями, создавая новые статьи и руководства.</p>
-            </div>
-            
-            <div class="feature-card">
-                <h3>Обсуждайте</h3>
-                <p>Участвуйте в обсуждениях, задавайте вопросы и находите ответы.</p>
-            </div>
+        {% if current_user.is_authenticated %}
+            <a href="{{ url_for('lab8.articles_list') }}" class="my-articles-link">📝 Мои статьи</a>
+            <a href="{{ url_for('lab8.create') }}">✏️ Создать статью</a>
+            <a href="{{ url_for('lab8.logout') }}">🚪 Выйти</a>
+        {% else %}
+            <a href="{{ url_for('lab8.login') }}">🔑 Вход</a>
+            <a href="{{ url_for('lab8.register') }}">📋 Регистрация</a>
+        {% endif %}
+    </div>
+    
+    <div class="welcome-message">
+        <h1>Добро пожаловать в Базу знаний!</h1>
+        {% if current_user.is_authenticated %}
+            <p>Привет, <strong>{{ current_user.login }}</strong>! Теперь вы можете создавать и редактировать статьи.</p>
+            <p><a href="{{ url_for('lab8.create') }}" style="color: #28a745; font-weight: bold;">Создайте свою первую статью</a></p>
+        {% else %}
+            <p>Для работы со статьями необходимо <a href="{{ url_for('lab8.login') }}" style="color: #007bff; font-weight: bold;">войти</a> или <a href="{{ url_for('lab8.register') }}" style="color: #007bff; font-weight: bold;">зарегистрироваться</a>.</p>
+            <p>Но вы уже можете просматривать <a href="{{ url_for('lab8.public_articles') }}" style="color: #28a745; font-weight: bold;">публичные статьи</a> и использовать <a href="{{ url_for('lab8.search_articles') }}" style="color: #ffc107; font-weight: bold;">поиск</a>!</p>
+        {% endif %}
+    </div>
+    
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>📚 Публичные статьи</h3>
+            <p>Доступны всем пользователям без регистрации:</p>
+            <ul>
+                <li>Чтение статей других авторов</li>
+                <li>Просмотр авторства</li>
+                <li>Оценка популярности (лайки)</li>
+            </ul>
+            <a href="{{ url_for('lab8.public_articles') }}" class="public-articles-link" style="display: inline-block; margin-top: 10px;">Перейти к статьям</a>
         </div>
-    </main>
-</body>
-</html>
+        
+        <div class="feature-card">
+            <h3>🔍 Поиск статей</h3>
+            <p>Мощный поиск по всем статьям:</p>
+            <ul>
+                <li>Регистронезависимый поиск</li>
+                <li>Поиск по заголовку и тексту</li>
+                <li>Фильтрация по доступности</li>
+            </ul>
+            <a href="{{ url_for('lab8.search_articles') }}" class="search-link" style="display: inline-block; margin-top: 10px;">Начать поиск</a>
+        </div>
+        
+        <div class="feature-card">
+            <h3>📝 Личные статьи</h3>
+            <p>Для зарегистрированных пользователей:</p>
+            <ul>
+                <li>Создание и редактирование статей</li>
+                <li>Управление приватностью</li>
+                <li>История всех ваших статей</li>
+            </ul>
+            {% if current_user.is_authenticated %}
+                <a href="{{ url_for('lab8.articles_list') }}" class="my-articles-link" style="display: inline-block; margin-top: 10px;">Мои статьи</a>
+            {% else %}
+                <p style="color: #6c757d; font-style: italic;">Требуется регистрация</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
